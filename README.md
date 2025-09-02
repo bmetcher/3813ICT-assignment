@@ -1,59 +1,100 @@
-# ChatApp
+# 3813ICT Assignment
 
-This project was generated using [Angular CLI](https://github.com/angular/angular-cli) version 20.1.5.
+## Project Overview
+Web-app chat with groups & channels and users with roles & permissions
 
-## Development server
+* Phase 1 Requirements:
+- User Creation
+- Login
+- Assign Groups & Channels
+- Role-based Views
+- UI Skeleton
+- Wireframes
 
-To start a local development server, run:
+### UI Layout
+- login page -> username+password (non-functioning)
+- dashboard -> list groups + channels
+- chat windows -> dummy messages + input box (non-functioning)
+- profile -> shows logged-in user info (editable)
+- settings -> placeholder for editing app settings (e.g.: volume, full or short message appearance, etc.)
 
-```bash
-ng serve
-```
+# To Be Sorted:
+* Roles:
+- super admin
+    + can create & edit groups
+    + can assign group-admins
+    > show dummy buttons for "Promote User", "Remove User", etc.
+- group admin
+    + can create & edit channels
+    + can invite users
+    > dummy "Create Channel" button
+- user
+    - contains user details
+    - can join channels, send messages... (not yet)
+    > chat, join/leave group?
+Maybe "Dashboard" can search Group List? 
+then groups can be PUBLIC/PRIVATE
+(open or invite-only)
 
-Once the server is running, open your browser and navigate to `http://localhost:4200/`. The application will automatically reload whenever you modify any of the source files.
+* Passwords with B-Crypt etc. ? 
+    
+    
+## Data Structures
 
-## Code scaffolding
+### Angular Architecture
 
-Angular CLI includes powerful code scaffolding tools. To generate a new component, run:
+#### Models:
+export interface User {
+    id: string;
+    username: string;
+    email: string;
+    role: 'super' | 'group' | 'user';
+    groups: string[];
+}
+export interface Group {
+    id: string;
+    name: string;
+    admins: string[];
+    channels: string[];
+}
+export interface Channel {
+    id: string;
+    name: string;
+    type: 'text';
+    groupId: string;
+    messages: string[];
+}
 
-```bash
-ng generate component component-name
-```
 
-For a complete list of available schematics (such as `components`, `directives`, or `pipes`), run:
+#### Components:
+- login
+- dashboard (?)
+- chat
+- profile
+- settings
+- sidebar
 
-```bash
-ng generate --help
-```
+// pop-up user-list?
 
-## Building
+#### Services  (phase 1 uses dummy information to/from localStorage):
+auth.service.ts -> stores user
+data.service.ts -> loads users/groups/channels
 
-To build the project run:
 
-```bash
-ng build
-```
+### Node Server Architecture
+/server
+|- server.js
 
-This will compile your project and store the build artifacts in the `dist/` directory. By default, the production build optimizes your application for performance and speed.
+* Routes (return a dummy JSON):
+- POST /login
+- GET /users
+- GET /groups
+- GET /channels/:groupId
 
-## Running unit tests
 
-To execute unit tests with the [Karma](https://karma-runner.github.io) test runner, use the following command:
 
-```bash
-ng test
-```
 
-## Running end-to-end tests
 
-For end-to-end (e2e) testing, run:
 
-```bash
-ng e2e
-```
 
-Angular CLI does not come with an end-to-end testing framework by default. You can choose one that suits your needs.
 
-## Additional Resources
-
-For more information on using the Angular CLI, including detailed command references, visit the [Angular CLI Overview and Command Reference](https://angular.dev/tools/cli) page.
