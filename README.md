@@ -1,5 +1,7 @@
 # 3813ICT Assignment
 
+
+
 ## Project Overview
 Web-app chat with groups & channels and users with roles & permissions
 
@@ -37,6 +39,8 @@ then groups can be PUBLIC/PRIVATE
 (open or invite-only)
 
 * Passwords with B-Crypt etc. ? 
+
+* Bootstrap Installed
     
     
 ## Data Structures
@@ -44,35 +48,42 @@ then groups can be PUBLIC/PRIVATE
 ### Angular Architecture
 
 #### Models:
-export interface User {
-    id: string;
-    username: string;
-    email: string;
-    role: 'super' | 'group' | 'user';
-    groups: string[];
-}
-export interface Group {
-    id: string;
-    name: string;
-    admins: string[];
-    channels: string[];
-}
-export interface Channel {
-    id: string;
-    name: string;
-    type: 'text';
-    groupId: string;
-    messages: string[];
-}
+* user.model.ts
+  public id: string,
+  public username: string,
+  public email: string,
+  public groups: string[] = [],
+  public password?: string, // Phase 1 only; not secure
+  public avatar?: string,    // URL for user's saved image
+  public superAdmin?: boolean = false
+
+* group.model.ts
+  public id: string,
+  public name: string,
+  public admins: string[] = [],
+  public members: string[] = [],
+  public channels: string[] = []
+
+* channel.model.ts
+  public id: string,
+  public name: string,
+  public groupId: string,
+  public members: string[] = [],
+  public messages: { userId: string, content: string, timestamp: Date }[] = []
 
 
 #### Components:
-- login
-- dashboard (?)
-- chat
-- profile
-- settings
-- sidebar
+- login-component   (if (!loggedIn): '/login' is the "home page")
+- chat-component    (if (loggedIn): "/chat" is the "home page")
+  - output-view-component (channel output -> messageList of "channelJoined")
+  - input-view-component  (user input -> text, image, voice, etc.)
+- channel-details   (if(channelJoined): Pop-out, RHS)
+- sidebar-component (Navigate to: Settings, Group & Channel List)
+- settings-component
+> set user's own data (pwd, dob, pfp, etc.)
+> edit client/UI settings (volume, scale, colours(?), devices etc.)
+
+
 
 // pop-up user-list?
 
