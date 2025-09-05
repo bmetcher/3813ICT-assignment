@@ -1,9 +1,9 @@
 import { Injectable, signal, inject, computed } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { User } from '../models/user.model';
-import { Observable } from 'rxjs';
+import { Observable, of } from 'rxjs';
 import { Router } from '@angular/router';
 
+import { User } from '../models/user.model';
 import { Users } from '../user-data'
 
 @Injectable({
@@ -13,43 +13,56 @@ export class AuthService {
   // inject angular services
   private http = inject(HttpClient);
   private router = inject(Router);
-  private server = "http://localhost:3000"; // hardcoded API server
+  private server = "http://localhost:3000"; // hardcoded API server (?)
 
-  // signals (reactive, "primitive" variables)
+  // signals (reactive variables)
   private _loggedIn = signal(false);
   private _user = signal<User | null>(null);
 
-  readonly currentUser = computed (() => this._user());
+  readonly currentUser = computed(() => this._user());
   readonly isLoggedIn = computed(() => this._loggedIn());
 
-  // http post to server -> observable
-  login(email: string, pwd: string): Observable<User> {
-    // Replace later with HTTP & Server:
-    return this.http.post<User>(`${this.server}/api/auth`, { email: email, pwd: pwd });
+
+  // Login using hard-coded user data   (*replace later with server-request)
+  login(email: string, password: string): Observable<User> {
+    // look for any login matches
+    const match = Users.find(user => user.email == email && user.password == password);
+
+    // successful login: clear password & valid=true
+    if (match) {
+      const user: User = { ...match, password: '', valid: true }
+      return of(user);  // wrap as an observable
+    } else {
+      // false login: clear everything
+      return of({
+        id: '', username: '', email, groups: [], password: '', avatar: '', superAdmin: false, valid: false
+      });
+    }
   }
 
-  setstatus(status: boolean) {
+  setStatus(status: boolean) {
     this._loggedIn.set(status);
   }
-  // read user data from local storage
-  getCurrentUser(): User | null{
+
+  // Read user data from localStorage
+  getCurrentUser(): User | null {
     let json = localStorage.getItem('currentUser');
     return json ? JSON.parse(json) : null;
   }
 
-  // save user data to localstorage
-  setCurrentUser(newUser:User | null) {
-    this.setstatus(true);
+  // Save user data to localStorage
+  setCurrentUser(newUser: User | null) {
+    this.setStatus(true);
     this._user.set(newUser);
-    console.log(this._user());  // DEBUGGING
+    console.log(this._user());  // debugging
     localStorage.setItem('currentUser', JSON.stringify(newUser));
   }
 
-  // clear localstorage and redirect to home
+  // clear localStorage and redirect to home
   logout() {
     localStorage.removeItem('currentUser');
-    this.setstatus(false);
+    this.setStatus(false);
     this._user.set(null);
-    this.router.navigateByUrl('/');
+    this.router.navigateByUrl('/login');
   }
 }

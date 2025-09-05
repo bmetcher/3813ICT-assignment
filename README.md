@@ -83,7 +83,20 @@ then groups can be PUBLIC/PRIVATE
 > set user's own data (pwd, dob, pfp, etc.)
 > edit client/UI settings (volume, scale, colours(?), devices etc.)
 
-
+- login:  default home page
+- chat:   new default (if loggedIn) (parent)
+  - output
+  - input
+  - details
+- settings
+  > (if loggedIn) can set the user's own data (password, DoB, avatar, ...)
+  > can always edit settings (peripherals, UI colour, etc.)
+- navbar
+  > (if loggedIn) 
+    > populated with groupList
+    > populated with currentUser
+  > (if activeGroup) populated with group's channelList
+  > 
 
 // pop-up user-list?
 
