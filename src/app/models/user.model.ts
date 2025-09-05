@@ -6,6 +6,7 @@ export class User {
     public groups: string[] = [],
     public password?: string,   // Phase 1 only; not secure
     public avatar?: string,     // URL for user's saved image
-    public superAdmin: boolean = false
+    public superAdmin: boolean = false,
+    public valid: boolean = false
   ) {}
 }
