@@ -1,7 +1,6 @@
 import { Injectable, signal, inject, computed } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
+//import { HttpClient } from '@angular/common/http';
 import { Observable, of } from 'rxjs';
-import { Router } from '@angular/router';
 
 import { User } from '../models/user.model';
 import { Users } from '../user-data'
@@ -10,10 +9,9 @@ import { Users } from '../user-data'
   providedIn: 'root'
 })
 export class AuthService {
-  // inject angular services
-  private http = inject(HttpClient);
-  private router = inject(Router);
-  private server = "http://localhost:3000"; // hardcoded API server (?)
+  // inject angular services (LATER)
+  //private http = inject(HttpClient);
+  //private server = "http://localhost:3000"; // hardcoded API server (?)
 
   // signals (reactive variables)
   private _loggedIn = signal(false);
@@ -63,6 +61,6 @@ export class AuthService {
     localStorage.removeItem('currentUser');
     this.setStatus(false);
     this._user.set(null);
-    this.router.navigateByUrl('/login');
+    // route back to login ? 
   }
 }
