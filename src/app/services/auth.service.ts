@@ -3,7 +3,13 @@ import { Injectable, signal, inject, computed } from '@angular/core';
 import { Observable, of } from 'rxjs';
 
 import { User } from '../models/user.model';
-import { Users } from '../user-data'
+import { Group } from '../models/group.model';
+import { Channel } from '../models/channel.model';
+
+import { Users } from '../dummy-data'
+import { GuestUser } from '../dummy-data';
+import { Groups } from '../dummy-data';
+import { Channels } from '../dummy-data';
 
 @Injectable({
   providedIn: 'root'
@@ -16,9 +22,14 @@ export class AuthService {
   // signals (reactive variables)
   private _loggedIn = signal(false);
   private _user = signal<User | null>(null);
-
-  readonly currentUser = computed(() => this._user());
+  // If not logged in: return GuestUser
+  readonly currentUser = computed(() => this._user() ?? GuestUser);
   readonly isLoggedIn = computed(() => this._loggedIn());
+
+  // Temporary Group & Channel signals for Phase 1
+  private _groups = signal<Group[]>([]);
+  readonly groups = computed(() => this._groups());
+
 
 
   // Login using hard-coded user data   (*replace later with server-request)
@@ -52,9 +63,24 @@ export class AuthService {
   setCurrentUser(newUser: User | null) {
     this.setStatus(true);
     this._user.set(newUser);
+
+    // set groups which contain the user's id
+    if (newUser) {
+      const userGroups = Groups.filter(group => group.members.includes(newUser.id));
+      this._groups.set(userGroups);
+    } else {
+      this._groups.set([]);
+    }
+
     console.log(this._user());  // debugging
     localStorage.setItem('currentUser', JSON.stringify(newUser));
   }
+
+  // helper function to return relevant channels for a group
+  channelsForGroup(groupId: string) {
+    return Channels.filter(channel => channel.groupId == groupId);
+  }
+
 
   // clear localStorage and redirect to home
   logout() {

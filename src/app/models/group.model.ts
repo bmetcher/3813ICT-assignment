@@ -4,6 +4,7 @@ export class Group {
     public name: string,
     public admins: string[] = [],
     public members: string[] = [],
-    public channels: string[] = []
+    public channels: string[] = [],
+    public open: boolean
   ) {}
 }
