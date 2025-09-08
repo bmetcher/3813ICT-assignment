@@ -26,13 +26,13 @@ export const GuestUser: User = {
 
 export const Groups: Group[] = [
   { id: '1', name: 'Group 1', admins: ['1'], members: ['1', '2'], 
-    channels: ['Announcements', 'Q&A'], open: false },
+    channels: ['1', '2'], open: false },
   { id: '2', name: 'Group 2', admins: ['1', '2'], members: ['1', '2', '3'], 
-    channels: ['Announcements', 'Public', 'FAQ'], open: false },
+    channels: ['3', '4', '5'], open: false },
   { id: '3', name: 'Group 3', admins: ['2'], members: ['1', '3'], 
-    channels: ['Announcements', 'Q&A'], open: false },
+    channels: ['6', '7'], open: false },
   { id: '4', name: 'Group 4', admins: ['3'], members: ['3'], 
-    channels: ['Announcements', 'Testing Chat'], open: false}
+    channels: ['8', '9'], open: false}
 ];
 
 export const Channels: Channel[] = [

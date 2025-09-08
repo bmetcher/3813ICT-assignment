@@ -1,1 +1,41 @@
-<p>settings works!</p>
+<div class="container py-3">
+    <!--Return To Chat-->
+    <div class="d-flex justify-content-between align-items-center mb-3 border-bottom pb-2">
+        <button class="btn btn-sm btn-outline-primary" (click)="backToChat()">Return to chat</button>
+        <h5>Settings</h5>
+    </div>
+
+    <!--User Data-->
+    <div class="card mb-3 p-3">
+        <div class="d-flex align-items-center mb-3">
+            <img [src]="user.avatar || 'assets/default-avatar.png'" class="rounded-circle me-3" style="width:128px;height:128px;">
+        </div>
+        <div class="mb-2">
+            <label class="form-label">Username</label>
+            <input class="form-control" [(ngModel)]="user.username" [readonly]="!editing">
+        </div>
+        <!-- <div class="mb-2">
+            <label class="form-label">Date of Birth</label>
+            <input class="form-control" type="date" [(ngModel)]="user.username" [readonly]="!editing">
+        </div> -->
+        <div class="mb-2">
+            <label class="form-label">Email</label>
+            <input class="form-control" type="email" [(ngModel)]="user.email" [readonly]="!editing">
+        </div>
+            <div class="mb-2">
+            <label class="form-label">Password</label>
+            <input class="form-control" type="password" [(ngModel)]="user.password" [readonly]="!editing">
+        </div>
+        <!--Allow logged in users to edit their details-->
+        <button *ngIf="user.id" class="btn btn-sm btn-outline-secondary ms-auto" (click)="toggleEdit()">
+            {{ editing ? 'Save' : 'Edit' }}
+        </button>
+    </div>
+
+    <!--Device & UI Settings-->
+    <div class="card p-3">
+        <h6> Device & UI Settings (placeholder) </h6>
+        <button class="btn btn-sm btn-outline-secondary">Change Theme</button>
+        <button class="btn btn-sm btn-outline-secondary">Device Options</button>
+    </div>
+</div>
