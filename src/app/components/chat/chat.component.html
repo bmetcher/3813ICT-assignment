@@ -1,10 +1,18 @@
-<div class="d-flex vh-100">
-    <div class="flex-grow-1 d-flex flex-column">
-        <app-output [channel]="currentChannel()"></app-output>
-        
-        <!-- <app-input (messageSubmit)="addMessage($event)"></app-input>
-        <app-details [channel]="currentChannel()"></app-details> -->
+<div class="d-flex vh-100 w-100">
+    <div class="flex-grow-1 d-flex flex-column me-3">
+        <!--Chat Display-->
+        <app-output [channel]="currentChannel()" class="flex-grow-1 overflow-auto"></app-output>
+        <!--Chat Input-->
+
+        <div class="card p-2 mt-2">
+            <app-input (messageSubmit)="addMessage($event)"></app-input>
+        </div>
+
     </div>
 
 
+    <!--Details pane-->
+    <div class="border-start" style="width: 12em;">
+        <app-details [channel]="currentChannel()"></app-details>
+    </div>
 </div>

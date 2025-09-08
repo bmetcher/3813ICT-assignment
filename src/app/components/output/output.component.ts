@@ -10,8 +10,6 @@ import { CommonModule } from '@angular/common';
   templateUrl: './output.component.html',
   styleUrl: './output.component.css'
 })
-
-
 export class OutputComponent {
   @Input() channel: Channel | null = null;
 

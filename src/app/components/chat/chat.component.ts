@@ -23,13 +23,15 @@ export class ChatComponent {
   currentChannel = this.channelService.currentChannel;
   messages = this.channelService.messages;
 
-  // when input.component emits a message
-  // addMessage(content: string) {
-  //   const userId = localStorage.get(currentUser.id);
-  //   this.channelService.addMessage({
-  //     userId,
-  //     content,
-  //     timestamp: new Date()
-  //   });
-  // }
+  //when input.component emits a message
+  addMessage(content: string) {
+    const user = this.authService.currentUser();
+    if (!user || !user.id) return;  // safeguard for Guest
+
+    this.channelService.addMessage({
+      userId: user.id,
+      content,
+      timestamp: new Date()
+    });
+  }
 }

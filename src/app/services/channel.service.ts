@@ -22,11 +22,15 @@ export class ChannelService {
   // add a message to the current channel
   addMessage(message: { userId: string, content: string, timestamp: Date }) {
     const channel = this._selectedChannel();
-    if (!this._selectedChannel()) return;
+    if (!channel) return;
 
-    this._selectedChannel()?.messages.push(message);
+    // create a new array to handle immutability
+    const updatedChannel: Channel = {
+      ...channel,
+      messages: [...channel.messages, message]
+    }
 
     // trigger reactivity manually
-    this._selectedChannel.set({ ...channel as Channel });
+    this._selectedChannel.set(updatedChannel);
   }
 }

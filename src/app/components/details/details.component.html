@@ -1,1 +1,19 @@
-<p>details works!</p>
+<div class="p-3 d-flex flex-column h-100">
+    <!--Channel Info-->
+    <div class="mb-3 border-bottom pb-2">
+        <h6> {{ channel?.name || 'No Channel' }} </h6>
+    </div>
+
+    <!--Members List-->
+    <div class="flex-grow-1 overflow-auto">
+        <h6 class="mb-2">Users</h6>
+        <ul class="list-unstyled">
+            <li *ngFor="let memberId of channel?.members">
+                <div class="d-flex alkign-items-center mb-2">
+                    <img [src]="getUserAvatar(memberId)" class="rounded-circle me-2" style="width:24px;height:24px;">
+                    <span> {{ getUsername(memberId) }} </span>
+                </div>
+            </li>
+        </ul>
+    </div>
+</div>

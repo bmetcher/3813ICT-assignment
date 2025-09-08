@@ -1,5 +1,5 @@
 <div *ngIf="channel; else noChannel" class="container p-3">
-    <h5> {{ channel.name }} <small class="text-muted"><br> Channel Description...</small></h5>
+    <!-- <h5> {{ channel.name }} <small class="text-muted"><br> Channel Description...</small></h5> -->
     <div *ngIf="channel.messages.length > 0; else noMessages">
         <div *ngFor="let message of channel.messages" class="card mb-1">
             <div class="card-body d-flex">

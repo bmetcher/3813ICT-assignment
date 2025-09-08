@@ -6,7 +6,7 @@ import { User } from '../models/user.model';
 import { Group } from '../models/group.model';
 import { Channel } from '../models/channel.model';
 
-import { Users } from '../dummy-data'
+import { Users } from '../dummy-data';
 import { GuestUser } from '../dummy-data';
 import { Groups } from '../dummy-data';
 import { Channels } from '../dummy-data';

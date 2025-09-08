@@ -19,6 +19,7 @@ export class SettingsComponent {
 
   // toggle editing user settings
   toggleEdit() {
+    this.editing = !this.editing;
     if (!this.editing) {
       // ask user to confirm changes
       const confirmed = window.confirm("Are you sure you want to save these changes?");
@@ -27,7 +28,6 @@ export class SettingsComponent {
       // save changes to localStorage
       this.authService.setCurrentUser(this.user);
     }
-    this.editing = !this.editing;
   }
 
   // return to Chat component
