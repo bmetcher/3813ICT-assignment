@@ -1,6 +1,7 @@
 import { Injectable, signal, computed } from '@angular/core';
 import { Channel } from '../models/channel.model';
-import { Channels } from '../dummy-data';
+import { Group } from '../models/group.model';
+import { Channels, Groups } from '../dummy-data';
 
 @Injectable({
   providedIn: 'root'
@@ -32,5 +33,11 @@ export class ChannelService {
 
     // trigger reactivity manually
     this._selectedChannel.set(updatedChannel);
+  }
+
+  // Check if a user's ID exists in the group's admin list
+  isGroupAdmin(userId: string, groupId: string): boolean {
+    const group = Groups.find(group => group.id === groupId);
+    return group ? group.admins.includes(userId) : false;
   }
 }
