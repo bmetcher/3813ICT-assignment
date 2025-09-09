@@ -57,6 +57,6 @@ export class DetailsComponent {
     if (!this.channel) return;  // typescript was cranky
     // append user to channel member list
     this.channel.members = [ ...this.channel?.members, addedUser.id ];
-    alert(addedUser.username + "has been added!");
+    alert(addedUser.username + " has been added!");
   }
 }

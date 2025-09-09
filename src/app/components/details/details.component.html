@@ -8,7 +8,7 @@
     <div *ngIf="channel" class="flex-grow-1 overflow-auto">
         <div class="d-flex align-items-center mb-4">
             <h6 class="flex-grow-1 m-2">Users</h6>
-            <button class="btn btn-sm btn-outline-success" (click)="addToChannel()">Add User</button>
+            <button *ngIf="isGroupAdmin()" class="btn btn-sm btn-outline-success" (click)="addToChannel()">Add User</button>
         </div>
         
         <ul class="list-unstyled">

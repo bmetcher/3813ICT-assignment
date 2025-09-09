@@ -1,124 +1,155 @@
-# 3813ICT Assignment
 
+# 3813ICT Assignment - Phase 1
 
 
 ## Project Overview
-Web-app chat with groups & channels and users with roles & permissions
+Web-based chat application with groups, channels and role-based user permissions.
+#### Phase 1 Focus:
+* User Creation, Login, and role-based views (super admin | group admin | user)
+* Assigning users to groups and channels
+* Basic UI skeleton for: Chat, Profile and Admin management
+* Frontend-only implementation with 'dummy' data and localStorage (no backend, yet)
+* Navigation and component layout for a functional demo
 
-* Phase 1 Requirements:
-- User Creation
-- Login
-- Assign Groups & Channels
-- Role-based Views
-- UI Skeleton
-- Wireframes
+
 
 ### UI Layout
-- login page -> username+password (non-functioning)
-- dashboard -> list groups + channels
-- chat windows -> dummy messages + input box (non-functioning)
-- profile -> shows logged-in user info (editable)
-- settings -> placeholder for editing app settings (e.g.: volume, full or short message appearance, etc.)
+#### Pages & Components
+* Login Page:
+  Users can enter their email and password. Logs the user in by storing data in localStorage (No real authentication or encryption in Phase 1)
 
-# To Be Sorted:
-* Roles:
-- super admin
-    + can create & edit groups
-    + can assign group-admins
-    > show dummy buttons for "Promote User", "Remove User", etc.
-- group admin
-    + can create & edit channels
-    + can invite users
-    > dummy "Create Channel" button
-- user
-    - contains user details
-    - can join channels, send messages... (not yet)
-    > chat, join/leave group?
-Maybe "Dashboard" can search Group List? 
-then groups can be PUBLIC/PRIVATE
-(open or invite-only)
+* Chat Dashboard:
+  Display the user's groups and channels. Parent component of:
+  * Output: Display messages in the selected channel
+  * Input: Send messages (pseudo-functional; later will handle voice control etc.)
+  * Details: Show channel members with role-based actions (Group/Super Admin: add or remove users)
 
-* Passwords with B-Crypt etc. ? 
+* Navbar:
+  * Displays groups based on the stored user
+  * Toggle groups "open" to show existing channels
+  * Select a channel to set as the active channel for the Chat component(s)
 
-* Bootstrap Installed
-    
-    
-## Data Structures
+* Settings:
+  * Update the user's information (username, email, password)
+  * Logout button to clear current user from localStorage
+  * Admin Settings button for Super Admin
+
+* Admin Settings (Super Admin only): 
+  Manage users and groups. Here a super admin can:
+  * Create new users
+  * Remove existing users
+  * Assign users to groups (non-functional)
+
+
+
+### Roles & Permissions
+#-----#-----------------------------------------#
+|Role | Permissions (Phase 1)                   |
+|-----|-----------------------------------------#
+|Super|Create/remove users, assign group admins,|
+|Admin|view all groups & channels               |
+#-----#-----------------------------------------#
+|Group|Manage channels within groups, invite or |
+|Admin|remove users to channels                 |
+#-----#-----------------------------------------#
+|User |View channels & members, send messages   |
+#-----#-----------------------------------------#
+* Note: Role-based access control is handled using `auth.guard.ts` for logged-in users,
+and `super.guard.ts` for super-admin routes.*
+
+
+
+### Data Structures
+#### Models
+##### User `user.model.ts`
+> public id: string,
+> public username: string,
+> public email: string,
+> public groups: string[] = [],
+> public password?: string,   // Phase 1 only; not secure
+> public avatar?: string,     // URL for user's saved image
+> public superAdmin: boolean = false,
+> public valid: boolean = false
+
+##### Group `group.model.ts`
+> public id: string,
+> public name: string,
+> public admins: string[] = [],   // user IDs
+> public members: string[] = [],  // user IDs
+> public channels: string[] = [], // channel IDs
+> public open: boolean
+
+##### Channel `channel.model.ts`
+> public id: string,
+> public name: string,
+> public groupId: string,
+> public members: string[] = [],  // user IDs
+> public messages: { userId: string, content: string, timestamp: Date }[] = []
+
+
 
 ### Angular Architecture
-
-#### Models:
-* user.model.ts
-  public id: string,
-  public username: string,
-  public email: string,
-  public groups: string[] = [],
-  public password?: string, // Phase 1 only; not secure
-  public avatar?: string,    // URL for user's saved image
-  public superAdmin?: boolean = false
-
-* group.model.ts
-  public id: string,
-  public name: string,
-  public admins: string[] = [],
-  public members: string[] = [],
-  public channels: string[] = []
-
-* channel.model.ts
-  public id: string,
-  public name: string,
-  public groupId: string,
-  public members: string[] = [],
-  public messages: { userId: string, content: string, timestamp: Date }[] = []
-
-
-#### Components:
-- login-component   (if (!loggedIn): '/login' is the "home page")
-- chat-component    (if (loggedIn): "/chat" is the "home page")
-  - output-view-component (channel output -> messageList of "channelJoined")
-  - input-view-component  (user input -> text, image, voice, etc.)
-- channel-details   (if(channelJoined): Pop-out, RHS)
-- sidebar-component (Navigate to: Settings, Group & Channel List)
-- settings-component
-> set user's own data (pwd, dob, pfp, etc.)
-> edit client/UI settings (volume, scale, colours(?), devices etc.)
-
-- login:  default home page
-- chat:   new default (if loggedIn) (parent)
-  - output
-  - input
-  - details
-- settings
-  > (if loggedIn) can set the user's own data (password, DoB, avatar, ...)
-  > can always edit settings (peripherals, UI colour, etc.)
-- navbar
-  > (if loggedIn) 
-    > populated with groupList
-    > populated with currentUser
-  > (if activeGroup) populated with group's channelList
-  > 
-
-// pop-up user-list?
-
-#### Services  (phase 1 uses dummy information to/from localStorage):
-auth.service.ts -> stores user
-data.service.ts -> loads users/groups/channels
-
-
-### Node Server Architecture
-/server
-|- server.js
-
-* Routes (return a dummy JSON):
-- POST /login
-- GET /users
-- GET /groups
-- GET /channels/:groupId
+#### Components
+> admin
+> chat
+> ├ details
+> ├ input
+> └ output
+> login
+> navbar
+> settings
+#### Guards
+> auth.guard    // makes sure user is logged in
+> super.guard   // makes sure user is a super admin
+#### Services
+> auth.service.ts     // handles user login/logout, getting groups, and role-checking
+> channel.service.ts  // manages selected channel, messages, and role-checking 
 
 
 
+### Data Handling & Persistence
+* Data is initialized from a local test dataset (`dummy-data.ts`) when localStorage doesn't exist
+* All data changes are persisted only in localStorage for demo purposes
+* Super admin actions (create/remove users, or groups) modify localStorage; changes can survive temporarily (page refresh, some navigation)
+* Channels and messages are stored in signals of `ChannelService` for reactive frontend updates
 
 
 
+### Node Server Architecture (Phase 2 Planning)
+Currently Phase 1 is frontend-only, but the intended architecture will include a Node.js backend for persistent data storage.
+
+> /server
+> └ server.js
+
+#### Planned Routes:
+> POST /login
+> GET /users
+> GET /groups
+> GET /channels/:groupId
+
+
+
+### Version Control
+* Git repository structured to separate: assets, components, services, guards, and models.
+* Frequent commits made with descriptive messages, e.g.:
+> added: components, models, routes
+> added: admin component & superGuard
+> +details: admin can remove or add users (temp)
+
+
+
+### Notes Going Forward
+#### Must Implement:
+* Replace localStorage with a backend database (MongoDB) - many features, incl. image upload
+* Node.js - proper REST API endpoints
+* Secure authentication with B-crypt
+* Sockets - proper chat functionality
+* PeerJS - video chat
+
+#### Would Like to Implement:
+* Revise data structures:
+  * Groups & Channels - relating to their respective admins and users
+  * Messages
+* Enhance UI: all super admin & group admin permissions secure & tidy 
 
 

@@ -51,5 +51,5 @@ export const Channels: Channel[] = [
   { id: '6', name: 'Announcements', groupId: '3', members: ['1', '3'], messages: []},
   { id: '7', name: 'Q&A', groupId: '3', members: ['1', '3'], messages: []},
   { id: '8', name: 'Announcements', groupId: '4', members: ['3'], messages: []},
-  { id: '9', name: 'Testing Chat', groupId: '3', members: ['3'], messages: []},
+  { id: '9', name: 'Testing Chat', groupId: '4', members: ['3'], messages: []},
 ];
