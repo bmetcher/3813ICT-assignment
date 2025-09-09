@@ -15,23 +15,39 @@ export class SettingsComponent {
   private router = inject(Router);
 
   user = this.authService.currentUser();
+  originalUser: any = null;
   editing = false;
 
   // toggle editing user settings
   toggleEdit() {
-    this.editing = !this.editing;
     if (!this.editing) {
-      // ask user to confirm changes
-      const confirmed = window.confirm("Are you sure you want to save these changes?");
-      if (!confirmed) return;
-
-      // save changes to localStorage
-      this.authService.setCurrentUser(this.user);
+      // enter edit mode with a copy of user
+      this.originalUser = { ...this.user };
+      this.editing = true;
+    } else {
+      // leave edit mode
+      const confirmed = window.confirm("Save your changes?");
+      if (confirmed) {
+        this.authService.setCurrentUser(this.user);
+      } else {
+        // restore old values if cancelled
+        this.user = { ...this.originalUser };
+        this.authService.setCurrentUser(this.user);
+      }
+      this.editing = false;
     }
   }
 
   // return to Chat component
   backToChat() {
     this.router.navigate(['/chat']);
+  }
+  // helper for logout
+  logout() {
+    const confirmed = window.confirm("Confirm logging out?");
+      if (confirmed) {
+        this.authService.logout();
+        this.router.navigate(['/login']);
+      }
   }
 }

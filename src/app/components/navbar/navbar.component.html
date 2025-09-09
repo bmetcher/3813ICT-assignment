@@ -1,4 +1,4 @@
-<div class="d-flex flex-column vh-100 border-end" style="width: 250px;">
+<div class="d-flex flex-column vh-100 border-end" style="width: 320px;">
     <div class="flex-grow-1 overflow-auto">
         <ng-container *ngIf="user().groups.length > 0; else noGroups">
             <!-- Group & Channel List -->
@@ -20,7 +20,7 @@
     </div>
 
     <!-- User Status & Settings -->
-    <div class="card mb-1 p-2">
+    <div class="card flex-shrink-0 mb-1 p-2">
         <div class="d-flex align-items-center justify-content-between p-2">
             <div class="d-flex align-items-center" (click)="openProfile()">
                 <img [src]="user().avatar || 'assets/default-avatar.png'"

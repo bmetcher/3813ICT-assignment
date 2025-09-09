@@ -87,6 +87,6 @@ export class AuthService {
     localStorage.removeItem('currentUser');
     this.setStatus(false);
     this._user.set(null);
-    // route back to login ? 
+    // add route back to login later?
   }
 }

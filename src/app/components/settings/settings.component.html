@@ -27,9 +27,14 @@
             <input class="form-control" type="password" [(ngModel)]="user.password" [readonly]="!editing">
         </div>
         <!--Allow logged in users to edit their details-->
-        <button *ngIf="user.id" class="btn btn-sm btn-outline-secondary ms-auto" (click)="toggleEdit()">
-            {{ editing ? 'Save' : 'Edit' }}
-        </button>
+        <div *ngIf="user.id" class="d-flex justify-content-between">
+            <button class="btn btn-outline-secondary" (click)="toggleEdit()">
+                {{ editing ? 'Save' : 'Edit' }}
+            </button>
+            <button class="btn btn-outline-danger" (click)="logout()">
+                Logout
+            </button>
+        </div>
     </div>
 
     <!--Device & UI Settings-->
