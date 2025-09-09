@@ -1,6 +1,5 @@
 
-# 3813ICT Assignment - Phase 1
-
+# [3813ICT Assignment - Phase 1](https://github.com/bmetcher/3813ICT-assignment/)
 
 ## Project Overview
 Web-based chat application with groups, channels and role-based user permissions.
