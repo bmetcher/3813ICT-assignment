@@ -1,0 +1,79 @@
+<div class="container py-3">
+    <div class="d-flex justify-content-between align-items-center mb-3 border-bottom pb-2">
+        <button class="btn btn-outline-primary" (click)="backToSettings()">Return to chat</button>
+        <h5>Admin Settings</h5>
+    </div>
+</div>
+
+<!--Manage Users-->
+<div class="card mb-3 p-3">
+    <h5>User Management</h5>
+    <hr>
+    <div *ngFor="let user of users" class="d-flex align-items-center justify-content-between mb-2 p-2">
+        <!--Display each user-->
+        <div>
+            <img [src]="user.avatar" class="rounded-circle me-2" style="width:32px;height:32px;">
+        </div>
+        <div> {{ user.username }} </div>
+        <div> {{ user.email }} </div>
+
+        <div>
+            <!--Placeholder-->
+        </div>
+
+        <div>            
+            <button class="btn btn-sm btn-outline-primary me-1" (click)="addToGroup()"> Add to Group</button>
+        </div>
+        <div>
+            <button class="btn btn-sm btn-outline-danger primary me-1" (click)="removeUser(user)">Remove</button>
+        </div>
+    </div>
+    
+    <!--New User Form-->
+    <div *ngIf="newUserToggle" class="d-flex-column align-items-center mb-3">
+        <div class="mb-2">
+            <label class="form-label">Username</label>
+            <input class="form-control" [(ngModel)]="newUser.username">
+        </div>
+        <div class="mb-2">
+            <label class="form-label">Email</label>
+            <input class="form-control" type="email" [(ngModel)]="newUser.email">
+        </div>
+            <div class="mb-2">
+            <label class="form-label">Password</label>
+            <input class="form-control" [(ngModel)]="newUser.password">
+        </div>
+    </div>
+    <button class="btn btn-sm btn-success mt-2" style="width:10em;" (click)="createUser()">
+        {{ !newUserToggle? 'New User' : 'Confirm' }}
+    </button>
+</div>
+
+
+<!--Manage Groups-->
+<div class="card mb-3 p-3">
+    <h5>Group Management</h5>
+    <hr>
+    <div *ngFor="let group of groups" class="d-flex align-items-center justify-content-between mb-2 p-2">
+        <!--Display each user-->
+        <div> {{ group.name }} </div>
+
+        <div>
+            <!--Placeholder-->
+        </div>
+
+        <div>
+            <button class="btn btn-sm btn-outline-danger primary me-1" (click)="removeGroup(group)">Remove</button>
+        </div>
+    </div>
+    <div *ngIf="newGroupToggle" class="d-flex-column align-items-center mb-3">
+        <div class="mb-2">
+            <label class="form-label">Group Name</label>
+            <input class="form-control" [(ngModel)]="newGroup.name">
+        </div>
+    </div>
+    <button class="btn btn-sm btn-success mt-2" style="width:10em;" (click)="createGroup()">
+        {{ !newGroupToggle? 'New Group' : 'Confirm' }}
+    </button>
+</div>
+

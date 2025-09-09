@@ -42,6 +42,9 @@ export class SettingsComponent {
   backToChat() {
     this.router.navigate(['/chat']);
   }
+  goToAdmin() {
+    this.router.navigate(['/admin'])
+  }
   // helper for logout
   logout() {
     const confirmed = window.confirm("Confirm logging out?");

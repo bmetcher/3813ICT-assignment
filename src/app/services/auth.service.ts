@@ -80,6 +80,14 @@ export class AuthService {
   channelsForGroup(groupId: string) {
     return Channels.filter(channel => channel.groupId == groupId);
   }
+  // if a user is super admin -> boolean
+  isSuperAdmin(): boolean {
+    const user = this.getCurrentUser();
+    if (!user) {
+      return false;
+    }
+    return user.superAdmin === true;
+  }
 
 
   // clear localStorage and redirect to home

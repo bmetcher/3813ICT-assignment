@@ -1,7 +1,8 @@
 <div class="container py-3">
     <!--Return To Chat-->
     <div class="d-flex justify-content-between align-items-center mb-3 border-bottom pb-2">
-        <button class="btn btn-sm btn-outline-primary" (click)="backToChat()">Return to chat</button>
+        <button class="btn btn-outline-primary" (click)="backToChat()">Return to chat</button>
+        <button *ngIf="user?.superAdmin" class="btn btn-outline-success btn-outline-primary" (click)="goToAdmin()">Admin Settings</button>
         <h5>Settings</h5>
     </div>
 

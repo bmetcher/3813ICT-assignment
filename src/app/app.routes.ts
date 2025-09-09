@@ -3,6 +3,9 @@ import { LoginComponent } from './components/login/login.component';
 import { ChatComponent } from './components/chat/chat.component';
 import { SettingsComponent } from './components/settings/settings.component';
 import { authGuard } from './guards/auth.guard';
+import { superGuard } from './guards/super.guard';
+import { AdminComponent } from './components/admin/admin.component';
+
 
 export const routes: Routes = [
   {
@@ -20,6 +23,12 @@ export const routes: Routes = [
     path:'settings',
     component: SettingsComponent,
     title: "Settings",
+  },
+  {
+    path: 'admin',
+    component: AdminComponent,
+    title: "Admin Settings",
+    canActivate: [superGuard]
   },
   // default is chat
   {
