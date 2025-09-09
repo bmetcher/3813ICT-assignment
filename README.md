@@ -89,21 +89,26 @@ public messages: { userId: string, content: string, timestamp: Date }[] = []
 
 ### Angular Architecture
 #### Components
-> admin
-> chat
-> ├ details
-> ├ input
-> └ output
-> login
-> navbar
-> settings
+```
+admin
+chat
+├ details
+├ input
+└ output
+login
+navbar
+settings
+```
 #### Guards
-> auth.guard    // makes sure user is logged in
-> super.guard   // makes sure user is a super admin
+```
+auth.guard    // makes sure user is logged in
+super.guard   // makes sure user is a super admin
+```
 #### Services
-> auth.service.ts     // handles user login/logout, getting groups, and role-checking
-> channel.service.ts  // manages selected channel, messages, and role-checking 
-
+```
+auth.service.ts     // handles user login/logout, getting groups, and role-checking`
+channel.service.ts  // manages selected channel, messages, and role-checking`
+```
 
 
 ### Data Handling & Persistence
@@ -116,25 +121,27 @@ public messages: { userId: string, content: string, timestamp: Date }[] = []
 
 ### Node Server Architecture (Phase 2 Planning)
 Currently Phase 1 is frontend-only, but the intended architecture will include a Node.js backend for persistent data storage.
-
-> /server
-> └ server.js
-
+```
+/server
+└ server.js
+```
 #### Planned Routes:
-> POST /login
-> GET /users
-> GET /groups
-> GET /channels/:groupId
-
+```
+POST /login
+GET /users
+GET /groups
+GET /channels/:groupId
+```
 
 
 ### Version Control
 * Git repository structured to separate: assets, components, services, guards, and models.
 * Frequent commits made with descriptive messages, e.g.:
-> added: components, models, routes
-> added: admin component & superGuard
-> +details: admin can remove or add users (temp)
-
+```
+added: components, models, routes
+added: admin component & superGuard
++details: admin can remove or add users (temp)
+```
 
 
 ### Notes Going Forward
