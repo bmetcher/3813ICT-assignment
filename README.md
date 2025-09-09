@@ -43,17 +43,13 @@ Web-based chat application with groups, channels and role-based user permissions
 
 
 ### Roles & Permissions
-#-----#-----------------------------------------#
-|Role | Permissions (Phase 1)                   |
-|-----|-----------------------------------------#
-|Super|Create/remove users, assign group admins,|
-|Admin|view all groups & channels               |
-#-----#-----------------------------------------#
-|Group|Manage channels within groups, invite or |
-|Admin|remove users to channels                 |
-#-----#-----------------------------------------#
-|User |View channels & members, send messages   |
-#-----#-----------------------------------------#
+
+|Role        | Permissions (Phase 1)                                                |
+|------------|----------------------------------------------------------------------|
+|Super Admin | Create/remove users, assign group admins, view all groups & channels |
+|Group Admin | Manage channels within groups, invite or remove users to channels    |
+|User        | View channels & members, send messages                               |
+
 * Note: Role-based access control is handled using `auth.guard.ts` for logged-in users,
 and `super.guard.ts` for super-admin routes.*
 
@@ -62,30 +58,33 @@ and `super.guard.ts` for super-admin routes.*
 ### Data Structures
 #### Models
 ##### User `user.model.ts`
-> public id: string,
-> public username: string,
-> public email: string,
-> public groups: string[] = [],
-> public password?: string,   // Phase 1 only; not secure
-> public avatar?: string,     // URL for user's saved image
-> public superAdmin: boolean = false,
-> public valid: boolean = false
-
+```ts
+public id: string,
+public username: string,
+public email: string,
+public groups: string[] = [],
+public password?: string,   // Phase 1 only; not secure
+public avatar?: string,     // URL for user's saved image
+public superAdmin: boolean = false,
+public valid: boolean = false
+```
 ##### Group `group.model.ts`
-> public id: string,
-> public name: string,
-> public admins: string[] = [],   // user IDs
-> public members: string[] = [],  // user IDs
-> public channels: string[] = [], // channel IDs
-> public open: boolean
-
+```ts
+public id: string,
+public name: string,
+public admins: string[] = [],   // user IDs
+public members: string[] = [],  // user IDs
+public channels: string[] = [], // channel IDs
+public open: boolean
+```
 ##### Channel `channel.model.ts`
-> public id: string,
-> public name: string,
-> public groupId: string,
-> public members: string[] = [],  // user IDs
-> public messages: { userId: string, content: string, timestamp: Date }[] = []
-
+```ts
+public id: string,
+public name: string,
+public groupId: string,
+public members: string[] = [],  // user IDs
+public messages: { userId: string, content: string, timestamp: Date }[] = []
+```
 
 
 ### Angular Architecture
