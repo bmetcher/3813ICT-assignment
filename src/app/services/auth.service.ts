@@ -34,26 +34,10 @@ export class AuthService {
 
 
 
-  // Login using hard-coded user data   (*replace later with server-request)
+  // Login using hard-coded user data 
   login(email: string, password: string): Observable<User> {
-    return this.http.post<User>(`${this.server}/api/auth`, { email: email, password: password });
+    return this.http.post<User>(`${this.server}/api/auth/login`, { email: email, password: password });
   }
-
-  //  login(email: string, password: string): Observable<User> {
-  //   // look for any login matches
-  //   const match = Users.find(user => user.email == email && user.password == password);
-
-  //   // successful login: clear password & valid=true
-  //   if (match) {
-  //     const user: User = { ...match, password: '', valid: true }
-  //     return of(user);  // wrap as an observable
-  //   } else {
-  //     // false login: clear everything
-  //     return of({
-  //       id: '', username: '', email, groups: [], password: '', avatar: '', superAdmin: false, valid: false
-  //     });
-  //   }
-  // }
 
   setStatus(status: boolean) {
     this._loggedIn.set(status);
