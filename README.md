@@ -1,6 +1,5 @@
 
-# 3813ICT Assignment - Phase 1
-
+# [3813ICT Assignment - Phase 1](https://github.com/bmetcher/3813ICT-assignment/)
 
 ## Project Overview
 Web-based chat application with groups, channels and role-based user permissions.
@@ -43,17 +42,13 @@ Web-based chat application with groups, channels and role-based user permissions
 
 
 ### Roles & Permissions
-#-----#-----------------------------------------#
-|Role | Permissions (Phase 1)                   |
-|-----|-----------------------------------------#
-|Super|Create/remove users, assign group admins,|
-|Admin|view all groups & channels               |
-#-----#-----------------------------------------#
-|Group|Manage channels within groups, invite or |
-|Admin|remove users to channels                 |
-#-----#-----------------------------------------#
-|User |View channels & members, send messages   |
-#-----#-----------------------------------------#
+
+|Role        | Permissions (Phase 1)                                                |
+|------------|----------------------------------------------------------------------|
+|Super Admin | Create/remove users, assign group admins, view all groups & channels |
+|Group Admin | Manage channels within groups, invite or remove users to channels    |
+|User        | View channels & members, send messages                               |
+
 * Note: Role-based access control is handled using `auth.guard.ts` for logged-in users,
 and `super.guard.ts` for super-admin routes.*
 
@@ -62,49 +57,57 @@ and `super.guard.ts` for super-admin routes.*
 ### Data Structures
 #### Models
 ##### User `user.model.ts`
-> public id: string,
-> public username: string,
-> public email: string,
-> public groups: string[] = [],
-> public password?: string,   // Phase 1 only; not secure
-> public avatar?: string,     // URL for user's saved image
-> public superAdmin: boolean = false,
-> public valid: boolean = false
-
+```ts
+public id: string,
+public username: string,
+public email: string,
+public groups: string[] = [],
+public password?: string,   // Phase 1 only; not secure
+public avatar?: string,     // URL for user's saved image
+public superAdmin: boolean = false,
+public valid: boolean = false
+```
 ##### Group `group.model.ts`
-> public id: string,
-> public name: string,
-> public admins: string[] = [],   // user IDs
-> public members: string[] = [],  // user IDs
-> public channels: string[] = [], // channel IDs
-> public open: boolean
-
+```ts
+public id: string,
+public name: string,
+public admins: string[] = [],   // user IDs
+public members: string[] = [],  // user IDs
+public channels: string[] = [], // channel IDs
+public open: boolean
+```
 ##### Channel `channel.model.ts`
-> public id: string,
-> public name: string,
-> public groupId: string,
-> public members: string[] = [],  // user IDs
-> public messages: { userId: string, content: string, timestamp: Date }[] = []
-
+```ts
+public id: string,
+public name: string,
+public groupId: string,
+public members: string[] = [],  // user IDs
+public messages: { userId: string, content: string, timestamp: Date }[] = []
+```
 
 
 ### Angular Architecture
 #### Components
-> admin
-> chat
-> ├ details
-> ├ input
-> └ output
-> login
-> navbar
-> settings
+```
+admin
+chat
+├ details
+├ input
+└ output
+login
+navbar
+settings
+```
 #### Guards
-> auth.guard    // makes sure user is logged in
-> super.guard   // makes sure user is a super admin
+```
+auth.guard    // makes sure user is logged in
+super.guard   // makes sure user is a super admin
+```
 #### Services
-> auth.service.ts     // handles user login/logout, getting groups, and role-checking
-> channel.service.ts  // manages selected channel, messages, and role-checking 
-
+```
+auth.service.ts     // handles user login/logout, getting groups, and role-checking`
+channel.service.ts  // manages selected channel, messages, and role-checking`
+```
 
 
 ### Data Handling & Persistence
@@ -117,25 +120,27 @@ and `super.guard.ts` for super-admin routes.*
 
 ### Node Server Architecture (Phase 2 Planning)
 Currently Phase 1 is frontend-only, but the intended architecture will include a Node.js backend for persistent data storage.
-
-> /server
-> └ server.js
-
+```
+/server
+└ server.js
+```
 #### Planned Routes:
-> POST /login
-> GET /users
-> GET /groups
-> GET /channels/:groupId
-
+```
+POST /login
+GET /users
+GET /groups
+GET /channels/:groupId
+```
 
 
 ### Version Control
 * Git repository structured to separate: assets, components, services, guards, and models.
 * Frequent commits made with descriptive messages, e.g.:
-> added: components, models, routes
-> added: admin component & superGuard
-> +details: admin can remove or add users (temp)
-
+```
+added: components, models, routes
+added: admin component & superGuard
++details: admin can remove or add users (temp)
+```
 
 
 ### Notes Going Forward
