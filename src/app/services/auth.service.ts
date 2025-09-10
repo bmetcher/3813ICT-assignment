@@ -1,6 +1,7 @@
 import { Injectable, signal, inject, computed } from '@angular/core';
-//import { HttpClient } from '@angular/common/http';
+import { HttpClient } from '@angular/common/http';
 import { Observable, of } from 'rxjs';
+import { Router } from '@angular/router';
 
 import { User } from '../models/user.model';
 import { Group } from '../models/group.model';
@@ -16,8 +17,9 @@ import { Channels } from '../dummy-data';
 })
 export class AuthService {
   // inject angular services (LATER)
-  //private http = inject(HttpClient);
-  //private server = "http://localhost:3000"; // hardcoded API server (?)
+  private http = inject(HttpClient);
+  private router = inject(Router);
+  private server = "http://localhost:3000"; // hardcoded API server
 
   // signals (reactive variables)
   private _loggedIn = signal(false);
@@ -34,20 +36,24 @@ export class AuthService {
 
   // Login using hard-coded user data   (*replace later with server-request)
   login(email: string, password: string): Observable<User> {
-    // look for any login matches
-    const match = Users.find(user => user.email == email && user.password == password);
-
-    // successful login: clear password & valid=true
-    if (match) {
-      const user: User = { ...match, password: '', valid: true }
-      return of(user);  // wrap as an observable
-    } else {
-      // false login: clear everything
-      return of({
-        id: '', username: '', email, groups: [], password: '', avatar: '', superAdmin: false, valid: false
-      });
-    }
+    return this.http.post<User>(`${this.server}/api/auth`, { email: email, password: password });
   }
+
+  //  login(email: string, password: string): Observable<User> {
+  //   // look for any login matches
+  //   const match = Users.find(user => user.email == email && user.password == password);
+
+  //   // successful login: clear password & valid=true
+  //   if (match) {
+  //     const user: User = { ...match, password: '', valid: true }
+  //     return of(user);  // wrap as an observable
+  //   } else {
+  //     // false login: clear everything
+  //     return of({
+  //       id: '', username: '', email, groups: [], password: '', avatar: '', superAdmin: false, valid: false
+  //     });
+  //   }
+  // }
 
   setStatus(status: boolean) {
     this._loggedIn.set(status);
@@ -95,6 +101,6 @@ export class AuthService {
     localStorage.removeItem('currentUser');
     this.setStatus(false);
     this._user.set(null);
-    // add route back to login later?
+    this.router.navigateByUrl('/'); 
   }
 }

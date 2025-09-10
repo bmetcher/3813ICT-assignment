@@ -40,17 +40,16 @@ export class SettingsComponent {
 
   // return to Chat component
   backToChat() {
-    this.router.navigate(['/chat']);
+    this.router.navigateByUrl('/chat');
   }
   goToAdmin() {
-    this.router.navigate(['/admin'])
+    this.router.navigateByUrl('/admin')
   }
   // helper for logout
   logout() {
     const confirmed = window.confirm("Confirm logging out?");
       if (confirmed) {
         this.authService.logout();
-        this.router.navigate(['/login']);
       }
   }
 }
