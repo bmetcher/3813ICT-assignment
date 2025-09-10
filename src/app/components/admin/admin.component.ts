@@ -5,6 +5,7 @@ import { User } from '../../models/user.model';
 import { Group } from '../../models/group.model';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { AdminService } from '../../services/admin.service';
 
 @Component({
   selector: 'app-admin',
@@ -14,6 +15,7 @@ import { FormsModule } from '@angular/forms';
 })
 export class AdminComponent implements OnInit {
   private router = inject(Router);
+  private adminService = inject(AdminService);
 
   users: User[] = [];
   groups: Group[] = [];
@@ -25,27 +27,10 @@ export class AdminComponent implements OnInit {
   newGroupToggle: boolean = false;
 
   ngOnInit() {
-    // load users from localStorage if it exists (temporary)
-    const savedUsers = localStorage.getItem('users');
-    const savedGroups = localStorage.getItem('groups');
-
-    // without saved users; we load the dummy-data (temporary)
-    if (!savedUsers || savedUsers == '[]') {
-      this.users = [...Users];  
-      localStorage.setItem('users', JSON.stringify(this.users));
-    } else {
-      this.users = JSON.parse(savedUsers);
-    }
-    // without saved groups; we load the dummy-data (temporary)
-    if (!savedGroups || savedGroups == '[]') {
-      this.groups = [...Groups];  
-      localStorage.setItem('groups', JSON.stringify(this.groups));
-    } else {
-      this.groups = JSON.parse(savedGroups);
-    }
+    // subscribe to 'users' & 'groups' observables using 'admin.service'
+    this.adminService.getUsers().subscribe(users => this.users = users);
+    this.adminService.getGroups().subscribe(groups => this.groups = groups);
   }
-
-
 
   // Add or Remove Groups
   createGroup() {
@@ -96,33 +81,25 @@ export class AdminComponent implements OnInit {
   createUser() {
     // show the form
     if (!this.newUserToggle) {
-      this.newUser.username = '';
       this.newUserToggle = true;
       return;
     }
     
-    // check if the username already exists
-    if(this.users.some(user => user.username == this.newUser.username)) {
-      alert("That username is already taken!");
-      return;
-    }
     // confirm creation
     const confirmed = window.confirm("Create new user?");
     if (!confirmed) return;
 
-    // assign new ID
-    const newId = (this.users.length + 1).toString();
-    // create a copy of the newUser object
-    const userToAdd: User = { ...this.newUser, id: newId };
-
-    // add user to list
-    this.users.push(userToAdd);
-    // persist to localStorage (temporary)
-    localStorage.setItem('users', JSON.stringify(this.users));
-
-    // reset form
-    this.newUser = { ...GuestUser };
-    this.newUserToggle = false;
+    this.adminService.createUser(this.newUser).subscribe({
+      next: (user) => {
+        this.users.push(user);
+        this.newUser = { ...GuestUser };  // reset form
+        this.newUserToggle = false;
+        alert('User created successfully');
+      },
+      error: (err) => {
+        alert(err.error?.error || 'Failed to create user');
+      }
+    });
   }
   removeUser(userX: User) {
     // ask for confirmation
@@ -130,10 +107,15 @@ export class AdminComponent implements OnInit {
     if (!confirmed) return;
 
     // remove specific user from the array
-    this.users = this.users.filter(user => user.id !== userX.id);
-    localStorage.setItem('users', JSON.stringify(this.users));
-
-    alert("User removed")
+    this.adminService.deleteUser(userX.id).subscribe({
+      next: () => {
+        this.users = this.users.filter(user => user.id !== userX.id);
+        alert("User removed")
+      },
+      error: (err) => {
+        alert(err.error?.error || "Failed to remove user");
+      }
+    });
   }
 
   // (placeholder) * move to Details component later

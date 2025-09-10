@@ -1,6 +1,6 @@
 const express = require('express');
-const { readJson } = require('../../utilities/fileDb')    // handle JSON read/write (temp: until mongoDB)
 const router = express.Router();
+const { readJson } = require('../../utilities/fileDb')    // handle JSON read/write (temp: until mongoDB)
 
 
 // POST login process

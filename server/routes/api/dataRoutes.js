@@ -2,6 +2,10 @@ const express = require('express');
 const router = express.Router();
 const { readJson } = require('../../utilities/fileDb');
 
+
+// * login GET by userId ?
+// >> return filtered group/channel/user list based on 'membership' to groups etc.
+
 // GET all users
 router.get('/users', (req, res) => {
     const users = readJson('users.json');
@@ -41,7 +45,6 @@ router.post('/channels/:channelId/message', (req, res) => {
     writeJson('channels.json', channels);
     res.json(message);
 });
-
 
 
 module.exports = router;
