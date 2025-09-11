@@ -33,5 +33,4 @@ export class AdminService {
   deleteGroup(id: string): Observable<void> {
     return this.http.delete<void>(`${this.server}/admin/groups/${id}`);
   }
-
 }

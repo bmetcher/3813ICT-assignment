@@ -1,34 +1,80 @@
 [
-    { 
-        "id": "1", 
-        "name": "First Group", 
-        "admins": ["1"], 
-        "members": ["1", "2"], 
-        "channels": ["1", "2"], 
-        "open": false 
-    },
-    { 
-        "id": "2", 
-        "name": "Second Group", 
-        "admins": ["1", "2"], 
-        "members": ["1", "2", "3"], 
-        "channels": ["3", "4", "5"], 
-        "open": false 
-    },
-    { 
-        "id": "3", 
-        "name": "Third Group", 
-        "admins": ["2"], 
-        "members": ["1", "3"], 
-        "channels": ["6", "7"], 
-        "open": false 
-    },
-    { 
-        "id": "4", 
-        "name": "Fourth Group", 
-        "admins": ["3"], 
-        "members": ["3"], 
-        "channels": ["8", "9"], 
-        "open": false
-    }
+  {
+    "id": "1",
+    "name": "First Group",
+    "admins": [
+      "1"
+    ],
+    "members": [
+      "1",
+      "2"
+    ],
+    "channels": [
+      "1",
+      "2"
+    ],
+    "open": false
+  },
+  {
+    "id": "2",
+    "name": "Second Group",
+    "admins": [
+      "1",
+      "2"
+    ],
+    "members": [
+      "1",
+      "2",
+      "3"
+    ],
+    "channels": [
+      "3",
+      "4",
+      "5"
+    ],
+    "open": false
+  },
+  {
+    "id": "3",
+    "name": "Third Group",
+    "admins": [
+      "2"
+    ],
+    "members": [
+      "1",
+      "3"
+    ],
+    "channels": [
+      "6",
+      "7"
+    ],
+    "open": false
+  },
+  {
+    "id": "4",
+    "name": "Fourth Group",
+    "admins": [
+      "3"
+    ],
+    "members": [
+      "3"
+    ],
+    "channels": [
+      "8",
+      "9"
+    ],
+    "open": false
+  },
+  {
+    "id": "5",
+    "name": "Testing Group",
+    "admins": [
+      "1"
+    ],
+    "members": [
+      "1"
+    ],
+    "channels": "10",
+    "open": false
+  }
 ]

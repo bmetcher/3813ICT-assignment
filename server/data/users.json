@@ -39,5 +39,15 @@
     ],
     "superAdmin": false,
     "valid": true
+  },
+  {
+    "id": "4",
+    "username": "Davith",
+    "email": "dav@com.au",
+    "groups": [],
+    "password": "123",
+    "avatar": "assets/default-avatar.png",
+    "superAdmin": false,
+    "valid": false
   }
 ]

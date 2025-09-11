@@ -34,9 +34,8 @@ router.post('/users', (req, res) => {
 
 // DELETE removing a user
 router.delete('/users/:id', (req, res) => {
+    // read the id & users list data
     const userId = req.params.id;
-
-    // read current users
     const users = readJson('users.json');
 
     // check if the user exists
@@ -45,12 +44,63 @@ router.delete('/users/:id', (req, res) => {
         return res.status(404).json({ error: 'User not found' });
     }
 
-    // remove the user
+    // remove the user & save over the data
     users.splice(userIndex, 1);
-    // save the list
     writeJson('users.json', users);
-    // "OK" (200)
+
+    // (200) = OK
     res.status(200).json({ message: 'User deleted successfully'});
+})
+
+// POST createing a new group
+router.post('/groups', (req, res) => {
+    const { name } = req.body;
+    const groups = readJson('groups.json');
+    const channels = readJson('channels.json');
+
+    if (!name || name.trim() === '') {
+        return res.status(400).json({ error: 'Group name is required' });
+    }
+    if (groups.some(group => group.name === name)) {
+        return res.status(409).json({ error: 'That group name already exists!' });
+    }
+
+    // set the new group's values
+    const newGroup = {
+        id: (groups.length + 1).toString(),
+        name: name,
+        admins: ['1'],    // arbitrary only super admin for now -- ** add "currentUser"
+        members: ['1'],   // " "
+        channels: (channels.length + 1).toString(),
+        open: false
+    };
+
+    // add the group to the list & overwrite the file
+    groups.push(newGroup);
+    writeJson('groups.json', groups);
+    
+    // (201) = success; new resource created
+    res.status(201).json(newGroup);
+});
+
+// DELETE a group
+router.delete('/groups/:id', (req, res) => {
+    // read the id & groups data
+    const groupId = req.params.id;
+    const groups = readJson('groups.json');
+    
+    // try to find the group
+    const groupIndex = groups.findIndex(group => group.id === groupId);
+    if (groupIndex === -1) {
+        return res.status(404).json({ error: 'Group not found' });
+    }
+
+    // remove the group & overwrite the groups file
+    groups.splice(groupIndex, 1);
+    writeJson('groups.json', groups);
+
+    // (200) = OK
+    res.status(200).json({ message: 'Group deleted successfully' });
 })
 
 module.exports = router;

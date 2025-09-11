@@ -41,39 +41,37 @@ export class AdminComponent implements OnInit {
       return;
     }
     
-    // check if the group already exists
-    if(this.groups.some(group => group.name == this.newGroup.name)) {
-      alert("That group name is already taken!");
-      return;
-    }
     // confirm creation
     const confirmed = window.confirm("Create new group?");
     if (!confirmed) return;
 
-    // assign new ID
-    const newId = (this.groups.length + 1).toString();
-    // create a copy of the newGroup object
-    const groupToAdd: Group = { ...this.newGroup, id: newId };
-
-    // add user to list
-    this.groups.push(groupToAdd);
-    // persist to localStorage (temporary)
-    localStorage.setItem('groups', JSON.stringify(this.groups));
-
-    // reset form
-    this.newGroup.name = '';
-    this.newGroupToggle = false;
+    this.adminService.createGroup(this.newGroup).subscribe({
+      next: (group) => {
+        this.groups.push(group);
+        this.newGroup.name = '';
+        this.newGroupToggle = false;
+        alert('Group created successfully');
+      },
+      error: (err) => {
+        alert(err.error?.error || 'Failed to create group');
+      }
+    });
   }
   removeGroup(groupX: Group) {
     // ask for confirmation
     const confirmed = window.confirm("Delete group " + groupX.name + " ?");
     if (!confirmed) return;
 
-    // remove specific group from the array
-    this.groups = this.groups.filter(group => group.id !== groupX.id);
-    localStorage.setItem('groups', JSON.stringify(this.groups));
-
-    alert("Group removed")
+    // send DELETE request for the group
+    this.adminService.deleteGroup(groupX.id).subscribe({
+      next: () => {
+        this.groups = this.groups.filter(group => group.id !== groupX.id);
+        alert("Group removed");
+      },
+      error: (err) => {
+        alert(err.error?.error || "Failed to remove user");
+      }
+    });
   }
 
 
@@ -106,7 +104,7 @@ export class AdminComponent implements OnInit {
     const confirmed = window.confirm("Delete user " + userX.username + " ?");
     if (!confirmed) return;
 
-    // remove specific user from the array
+    // send DELETE request for the user
     this.adminService.deleteUser(userX.id).subscribe({
       next: () => {
         this.users = this.users.filter(user => user.id !== userX.id);
