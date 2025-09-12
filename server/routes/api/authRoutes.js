@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const { readJson } = require('../../utilities/fileDb')    // handle JSON read/write (temp: until mongoDB)
+const { readJson } = require('../../utilities/fileHandler')    // handle JSON read/write (temp: until mongoDB)
 
 
 // POST login process
@@ -43,16 +43,16 @@ router.post('/login', (req, res) => {
 });
 
 // GET context; return appropriate users?/groups/channels for the user
-application.get("/context", (req, res) => {
-    const user = req.user;
+// application.get("/context", (req, res) => {
+//     const user = req.user;
 
-    if (!user) {
-        return.res.status(401).json({ error: "Not authorized" });
-    }
+//     if (!user) {
+//         return.res.status(401).json({ error: "Not authorized" });
+//     }
 
-    //...
-    res.json({ groups, channels, users });
-})
+//     //...
+//     res.json({ groups, channels, users });
+// })
 
 
 module.exports = router;
