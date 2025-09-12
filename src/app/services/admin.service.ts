@@ -13,7 +13,7 @@ export class AdminService {
   private server = "http://localhost:3000/api";
 
   // User Management
-  getUsers(): Observable<User[]> {
+  getUsers(): Observable<User[]> {  // TO BE REPLACED 
     return this.http.get<User[]>(`${this.server}/data/users`);
   }
   createUser(user: User): Observable<User> {
@@ -24,8 +24,8 @@ export class AdminService {
   }
 
   // Group Management
-  getGroups(): Observable<Group[]> {                          // * do we just keep this in channel service, or something?
-    return this.http.get<Group[]>(`${this.server}/data/groups`);   // (make channel -> chat.service?)
+  getGroups(): Observable<Group[]> {  // TO BE REPLACED (context)
+    return this.http.get<Group[]>(`${this.server}/data/groups`);
   }
   createGroup(group: Group): Observable<Group> {
     return this.http.post<Group>(`${this.server}/admin/groups`, group);

@@ -66,10 +66,15 @@ export class AuthService {
     localStorage.setItem('currentUser', JSON.stringify(newUser));
   }
 
+  // ** REPLACE WITH "CONTEXT"
+  // && "contextSubject" for storing relevant users?/channels/groups
+  
   // helper function to return relevant channels for a group
   channelsForGroup(groupId: string) {
     return Channels.filter(channel => channel.groupId == groupId);
   }
+
+  // REPLACE THIS IN BACK END WITH CONTEXT
   // if a user is super admin -> boolean
   isSuperAdmin(): boolean {
     const user = this.getCurrentUser();

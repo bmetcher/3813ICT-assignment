@@ -42,4 +42,17 @@ router.post('/login', (req, res) => {
     res.send(customer);
 });
 
+// GET context; return appropriate users?/groups/channels for the user
+application.get("/context", (req, res) => {
+    const user = req.user;
+
+    if (!user) {
+        return.res.status(401).json({ error: "Not authorized" });
+    }
+
+    //...
+    res.json({ groups, channels, users });
+})
+
+
 module.exports = router;

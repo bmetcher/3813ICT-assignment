@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const { readJson, writeJson } = require('../../utilities/fileDb')
+const { readJson, writeJson } = require('../../utilities/fileHandler')
 
 // POST creating new user
 router.post('/users', (req, res) => {
