@@ -1,8 +1,18 @@
 const express = require('express'); // routing middleware
+const { connect } = require('./mongo');
 const cors = require('cors');
+
+// OLD ROUTES
 const authRoutes = require('./routes/api/authRoutes');
 const dataRoutes = require('./routes/api/dataRoutes');
 const adminRoutes = require('./routes/api/adminRoutes');
+// *TBD*
+// app.use('/api/auth', authRoutes);
+// app.use('/api/data', dataRoutes);
+// app.use('/api/admin', adminRoutes);
+
+// New Routes
+const usersRoutes = require('./routes/api/users');
 
 const app = express();
 const PORT = 3000;
@@ -11,12 +21,25 @@ const PORT = 3000;
 app.use(express.json());    // parse JSON data
 app.use(cors({ origin: 'http://localhost:4200' }))  // allow angular cors
 
-// inject express for single 'auth' endpoint
-app.use('/api/auth', authRoutes);
-app.use('/api/data', dataRoutes);
-app.use('/api/admin', adminRoutes);
+// Running the server
+async function startServer() {
+    try {
+        // connect to Mongo
+        await connect();    
+        // include CRUD routes for all 6 collections
 
-// run the server
-app.listen(PORT, () => {
-    console.log(`Server running on port ${PORT}`);
-});
+        // app.use('/api/bans', bansRoutes);
+        app.use('/api/users', usersRoutes);
+        // app.use('/api/groups', groupsRoutes);
+        // app.use('/api/channels', channelsRoutes);
+        // app.use('/api/messages', messagesRoutes);
+        // app.use('/api/memberships', membershipsRoutes);
+
+        // TODO: Get all users ???     -- replace with Memberships?
+
+        app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+    } catch (err) {
+        console.error('Failed to start server', err);
+    }
+}
+startServer();

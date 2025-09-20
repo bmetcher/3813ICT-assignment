@@ -1,13 +1,15 @@
 
-# [3813ICT Assignment - Phase 2](https://github.com/bmetcher/3813ICT-assignment/)
+# [3813ICT Assignment - Phase 1](https://github.com/bmetcher/3813ICT-assignment/)
 
 ## Project Overview
 Web-based chat application with groups, channels and role-based user permissions.
-#### Phase 2 Focus:
-* MongoDB (CRUD)
-* Sockets.io for ASYNC Chat Operations
-* Video and Image Chat
-* "Polished UI"
+#### Phase 1 Focus:
+* User Creation, Login, and role-based views (super admin | group admin | user)
+* Assigning users to groups and channels
+* Basic UI skeleton for: Chat, Profile and Admin management
+* Frontend-only implementation with 'dummy' data and localStorage (no backend, yet)
+* Navigation and component layout for a functional demo
+
 
 
 ### UI Layout
@@ -54,62 +56,33 @@ and `super.guard.ts` for super-admin routes.*
 
 ### Data Structures
 #### Models
+##### User `user.model.ts`
+```ts
+public id: string,
+public username: string,
+public email: string,
+public groups: string[] = [],
+public password?: string,   // Phase 1 only; not secure
+public avatar?: string,     // URL for user's saved image
+public superAdmin: boolean = false,
+public valid: boolean = false
+```
 ##### Group `group.model.ts`
 ```ts
-public _id: string,
+public id: string,
 public name: string,
-public channels: string[] = [],
-public admins: string[] = [],
-public bannedUsers: string[] = [],
-public open?: boolean
+public admins: string[] = [],   // user IDs
+public members: string[] = [],  // user IDs
+public channels: string[] = [], // channel IDs
+public open: boolean
 ```
 ##### Channel `channel.model.ts`
 ```ts
-public _id: string,
-public groupId: string,
+public id: string,
 public name: string,
-public description: string,
-public bannedUsers: string[] = []
-```
-##### User `user.model.ts`
-```ts
-  public _id: string,
-  public username: string,
-  public groups: string[] = [],   // temporary; may change localStorage caching later.
-  public channels: string[] = [],
-  
-  public avatar: string,          // URL for user's saved image
-  public status: string,          // "online", "busy", "offline"...
-  public email: string,
-  public dob: Date,
-```
-##### Message `message.model.ts`
-```ts
-public _id: string,
-public channelId: string,
-public userId: string,
-public content: string,
-public timestamp: Date,
-public attachment?: string,     // some URL
-public replyTo?: string         // some message _id
-```
-##### Ban `ban.model.ts`
-```ts
-_id: string,
-userId: string,
-targetId: string,
-targetType: "group" | "channel",
-date: Date,
-reason?: string,
-duration?: number
-```
-##### Membership `membership.model.ts`
-// _id is arbitrary here; we are essentially joining unique pairs of "userId" and "groupId".
-```ts
-public _id: string,
-public userId: string,
 public groupId: string,
-public role: "user" | "admin"
+public members: string[] = [],  // user IDs
+public messages: { userId: string, content: string, timestamp: Date }[] = []
 ```
 
 

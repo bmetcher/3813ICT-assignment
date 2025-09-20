@@ -5,7 +5,7 @@ export class User {
     public groups: string[] = [],   // group & channel populated by Server
     public channels: string[] = [],
     
-    public avatar: string,         // URL for user's saved image
+    public avatar: string,          // URL for user's saved image
     public status: string,          // "online", "busy", "offline"...
     public email: string,
     public dob: Date,
