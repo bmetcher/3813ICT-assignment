@@ -1,9 +1,9 @@
 export class Channel {
   constructor(
-    public id: string,
-    public name: string,
+    public _id: string,
     public groupId: string,
-    public members: string[] = [],
-    public messages: { userId: string, content: string, timestamp: Date }[] = []
+    public name: string,
+    public description: string,
+    public bannedUsers: string[] = []
   ) {}
 }

@@ -1,10 +1,10 @@
 export class Group {
   constructor(
-    public id: string,
+    public _id: string,
     public name: string,
-    public admins: string[] = [],
-    public members: string[] = [],
     public channels: string[] = [],
-    public open: boolean
+    public admins: string[] = [],
+    public bannedUsers: string[] = [],
+    public open?: boolean
   ) {}
 }

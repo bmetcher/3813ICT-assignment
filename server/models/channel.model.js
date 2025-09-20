@@ -1,9 +1,9 @@
-export class User {
-    constructor(id, name, groupId, members, messages) {
-        this.id = id,
-        this.name = name,
+export class Channel {
+    constructor(id, groupId, name, description, bannedUsers) {
+        this._id = id,
         this.groupId = groupId,
-        this.members = members,
-        this.messages = messages
+        this.name = name,
+        this.description = description,
+        this.bannedUsers = bannedUsers
     }
 }
