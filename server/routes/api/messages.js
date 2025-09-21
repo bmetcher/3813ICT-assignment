@@ -4,6 +4,7 @@ const { ObjectId } = require('mongodb');
 const { getDb } = require('../../mongo');
 const { readJson } = require('../../utilities/fileHandler');
 const Message = require('../../models/message.model');
+const canAccessChannel = require('../../utilities/accessControl');
 
 // POST a new channel message
 router.post('/', async (req, res) => {
@@ -11,28 +12,10 @@ router.post('/', async (req, res) => {
         const db = getDb();
         const { userId, channelId, content, attachment, replyTo } = req.body;
 
-        // fetch the channel for its groupId
-        const channel = await db.collection('channels').findOne({ _id: ObjectId(channelId) });
-        if (!channel) return res.status(404).json({ error: 'Channel not found' });
-
-        // validate user has membership first
-        const membership = await db.collection('memberships').findOne({
-            userId,
-            groupId: channel.groupId
-        });
-        if (!membership) {
-            return res.status(403).json({ error: 'User is not a member of this group' });
+        const access = await canAccessChannel(db, userId, channelId);
+        if (!access.ok) {
+            return res.status(access.error.code).json({ error: access.error.msg });
         }
-
-        // check if user is banned from channel or group
-        const banned = await db.collection('bans').findOne({
-            userId,
-            $or: [
-                { targetId: channelId, targetType: 'channel' },
-                { targetId: channel.groupId, targetType: 'group' }
-            ]
-        });
-        if (banned) return res.status(403).json({ error: 'User is banned from this channel' });
 
         // set new message values
         const message = {
