@@ -35,4 +35,9 @@ router.post('/', async (req, res) => {
     }
 });
 
+// GET messages of a channel
+router.get('/', async (req, res) => {
+    
+})
+
 module.exports = router;

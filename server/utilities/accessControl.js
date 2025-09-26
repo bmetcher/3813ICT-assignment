@@ -1,5 +1,6 @@
 const { ObjectId } = require('mongodb');
 
+// Check a user is an unbanned member of a channel
 async function canAccessChannel(db, userId, channelId) {
     // fetch the channel for its groupId
     const channel = await db.collection('channels').findOne({ _id: ObjectId(channelId) });
@@ -25,4 +26,20 @@ async function canAccessChannel(db, userId, channelId) {
     return { ok: true, channel };
 }
 
-module.exports = { canAccessChannel };
+
+// Helper for requiring admin in endpoints
+async function requireAdmin(db, userId, groupId) {
+    // find the user's membership
+    const membership = await db.collection('memberships').findOne({ userId, groupId });
+    // check their role is valid
+    if (!membership || (membership.role !== 'admin' && membership.role !== 'super')) {
+        const err = new Error('Admin privileges required');
+        err.status = 403;
+        throw err;
+    }
+    return membership;
+}
+
+
+
+module.exports = { canAccessChannel, requireAdmin };

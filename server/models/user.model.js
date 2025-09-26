@@ -11,7 +11,6 @@ export class User {
         this.dob = dob,
 
         this.password = password,
-        this.superAdmin = superAdmin,
         this.valid = valid
     }
 }

@@ -13,6 +13,7 @@ const adminRoutes = require('./routes/api/adminRoutes');
 
 // New Routes
 const usersRoutes = require('./routes/api/users');
+const loginRoutes = require('./routes/api/login');
 
 const app = express();
 const PORT = 3000;
@@ -29,7 +30,9 @@ async function startServer() {
         // include CRUD routes for all 6 collections
 
         // app.use('/api/bans', bansRoutes);
+        app.use('/api/login', loginRoutes);
         app.use('/api/users', usersRoutes);
+        
         // app.use('/api/groups', groupsRoutes);
         // app.use('/api/channels', channelsRoutes);
         // app.use('/api/messages', messagesRoutes);
