@@ -40,6 +40,16 @@ async function requireAdmin(db, userId, groupId) {
     return membership;
 }
 
+// Helper for requiring super admin (very specific endpoints)
+async function requireSuper(db, userId) {
+    const membership = await db.collection('memberships').findOne({ userId });
+    if (!membership || membership.role !== 'super') {
+        const err = new Error('Super Admin privileges required');
+        err.status = 403;
+        throw err;
+    }
+    return membership;
+}
 
 
 module.exports = { canAccessChannel, requireAdmin };

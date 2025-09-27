@@ -1,9 +1,10 @@
 export class Group {
-    constructor(id, name, channels, admins, bannedUsers) {
+    constructor(id, name, imageUrl, bannedUsers, userId, date) {
         this._id = id,
         this.name = name,
-        this.channels = channels,
-        this.admins = admins,
-        this.bannedUsers = bannedUsers
+        this.imageUrl = imageUrl,
+        this.bannedUsers = bannedUsers,
+        this.createdBy = userId,
+        this.createdAt = date
     }
 }

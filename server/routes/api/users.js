@@ -1,21 +1,29 @@
 const express = require('express');
 const router = express.Router();
 const bcrypt = require('bcrypt');       // for hashing passwords
-const jwt = require('jsonwebtoken');
-const authenticate = require('../../utiltities/auth');
-const User = require('../../models/user.model')
-const { readJson } = require('../../utilities/fileHandler');
+const authenticate = require('../../utilities/auth');
 const { getDb } = require('../../mongo');
-const { requireAdmin } = require('../../utilities/accessControl');
+const { requireAdmin, requireSuper } = require('../../utilities/accessControl');
 const { ObjectId } = require('mongodb');
 
 
 // CREATE a user
-router.post('/', async (req, res) => {
+router.post('/', authenticate, requireSuper, async (req, res) => {
     try {
-        const user = new User(req.body);
-        await user.save();
-        res.status(201).json(user);
+        const db = getDb();
+        const { password, ...rest } = req.body;
+
+        if (!password) return res.status(400).json({ error: 'No password to hash' });
+        // hash the user's password before saving it to the database
+        const hashed = await bcrypt.hash(password, 10);
+        const user = { ...rest, password: hashed };
+        
+        // insert into the db
+        await db.collection('users').insertOne(user);
+
+        // return without any password
+        const { password: _, ...safeUser } = user;
+        res.status(201).json({ safeUser, success: true });
     } catch (err) {
         res.status(400).json({ error: err.message });
     }
@@ -85,21 +93,26 @@ router.get('/channel/:id', async (req, res) => {
 
 
 // PUT update a user by their ID
-router.put('/:id', authenticate, async (req, res) => {
+router.put('/:userId', authenticate, async (req, res) => {
     try {
         const db = getDb();
-        const targetId = req.params.id;
+        const targetId = req.params.userId;
 
         // check permission
-        if (req.userId !== targetId) {
-            return res.status(403).json({ error: 'Forbidden' });
-        }
+        if (req.userId !== targetId) return res.status(403).json({ error: 'Forbidden' });
 
-        // update allowed fields
+        // update allowed fields (filter them)
         const { username, avatar, status, email, dob } = req.body;
+        const update = {};
+        if (username) update.username = username;
+        if (avatar) update.avatar = avatar;
+        if (status) update.status = status;
+        if (email) update.email = email;
+        if (dob) update.dob = dob;
+
         await db.collection('users').updateOne(
             { _id: ObjectId(targetId) },
-            { $set: { username, avatar, status, email, dob } }
+            { $set: update }
         );
 
         const updatedUser = await db.collection('users').findOne({ _id: ObjectId(targetId) });
@@ -111,20 +124,20 @@ router.put('/:id', authenticate, async (req, res) => {
 
 
 // PUT update a user's password
-router.put('/:id/password', authenticate, async (req, res) => {
+router.put('/:userId/password', authenticate, async (req, res) => {
     try {
         const db = getDb();
         const { oldPassword, newPassword } = req.body;
-        if (req.userId !== req.params.id) return res.status(403).json({ error: 'Forbidden' });
+        if (req.userId !== req.params.userId) return res.status(403).json({ error: 'Forbidden' });
 
         // verify the current/previous password
-        const user = await db.collection('users').findOne({ _id: ObjectId(req.params.id) });
+        const user = await db.collection('users').findOne({ _id: ObjectId(req.params.userId) });
         const match = await bcrypt.compare(oldPassword, user.password);
         if (!match) return res.status(400).json({ error: 'Incorrect current password' });
 
         // hash and update the password
         const hashed = await bcrypt.hash(newPassword, 10);
-        await db.collection('users').updateOne({ _id: ObjectId(req.params.id) }, { $set: { password: hashed } });
+        await db.collection('users').updateOne({ _id: ObjectId(req.params.userId) }, { $set: { password: hashed } });
         res.json({ success: true });
     } catch (err) {
         res.status(400).json({ error: err.message });
@@ -133,17 +146,14 @@ router.put('/:id/password', authenticate, async (req, res) => {
 
 
 // DELETE a user by ID
-router.delete('/:id', authenticate, async (req, res) => {
+router.delete('/:userId', authenticate, requireAdmin, async (req, res) => {
     try {
         const db = getDb();
-        const targetId = req.params.id;
+        const targetId = req.params.userId;
 
         // find the group of the user we want to delete
         const membership = await db.collection('memberships').findOne({ userId: targetId });
         if (!membership) return res.status(404).json({ error: 'Membership not found' });
-
-        // check if the requester is an admin in that group
-        await requireAdmin(db, req.userId, membership.groupId);
 
         // safe to delete the user
         await db.collection('users').deleteOne({ _id: ObjectId(targetId) });
