@@ -63,8 +63,11 @@ router.get('/:userId', authenticate, async (req, res) => {
     try {
         // fetch memberships collection with user's ID
         const db = getDb();
+        const targetUserId = new ObjectId(req.params.userId);
+
+        // find all group memberships
         const memberships = await db.collection('memberships')
-            .find({ userId: req.userId })
+            .find({ userId: targetUserId })
             .toArray();
 
         // collect the group IDs that are a match
@@ -86,8 +89,12 @@ router.get('/:userId', authenticate, async (req, res) => {
 router.put('/:groupId', authenticate, requireAdmin, async (req, res) => {
     try {
         const db = getDb();
-        const groupId = req.params.groupId;
+        const targetGroupId = new ObjectId(req.params.groupId);
         const { name, imageUrl } = req.body;
+
+        // check group exists
+        const group = await db.collection('groups').findOne({ _id: targetGroupId });
+        if (!group) return res.status(404).json({ error: 'Group not found' });
 
         // build new group object
         const update = {};
@@ -96,12 +103,12 @@ router.put('/:groupId', authenticate, requireAdmin, async (req, res) => {
 
         // update in DB
         const result = await db.collection('groups').updateOne(
-            { _id: ObjectId(groupId) },
+            { _id: targetGroupId },
             { $set: update }
         );
 
         // return success
-        const updatedGroup = await db.collection('groups').findOne({ _id: ObjectId(groupId) });
+        const updatedGroup = await db.collection('groups').findOne({ _id: targetGroupId });
         res.json({ group: updatedGroup, success: true });
     } catch (err) {
         res.status(400).json({ error: err.message });
@@ -141,20 +148,52 @@ router.put('/:groupId/:userId', authenticate, requireSuper, async (req, res) => 
     }
 });
 
-// DELETE a group
+// PUT add a user to a group
+router.put('/:groupId/:userId/invite', authenticate, requireAdmin, async (req, res) => {
+    try {
+        const db = getDb();
+        const targetGroupId = new ObjectId(req.params.groupId);
+        const targetUserId = new ObjectId(req.params.userId);
+
+        // check user banned
+        const group = await db.collection('groups').findOne({ _id: targetGroupId });
+        if (!group) return res.status(404).json({ error: 'Group not found' });
+        if (group.bannedUsers.some(id => id.equals(targetUserId))) {
+            return res.status(403).json({ error: 'User is banned from this group' });
+        }
+
+        // check user is already a member
+        const existingMembership = await db.collection('memberships').findOne({
+            groupId: targetGroupId,
+            userId: targetUserId
+        });
+        if (existingMembership) return res.status(400).json({ error: 'User is already a member' });
+
+        // add membership
+        await db.collection('memberships').insertOne({
+            groupId: targetGroupId,
+            userId: targetUserId,
+            role: 'user'
+        });
+
+        res.json({ success: true });
+    } catch (err) {
+        res.status(400).json({ error: err.message });
+    }
+});
+
+// DELETE a group (& dependent channels + memberships)
 router.delete('/:groupId', authenticate, requireSuper, async (req, res) => {
     try {
         const db = getDb();
-        const targetId = req.params.groupId;
-
-        // find the group to be deleted
-        const groupToDelete = await db.collection('groups').findOne({ _id: ObjectId(targetId) });
-        if (!groupToDelete) return res.status(404).json({ error: 'Group not found' });
+        const targetGroupId = new ObjectId(req.params.groupId);
 
         // delete the group
-        await db.collection('groups').deleteOne({ _id: ObjectId(targetId) });
-        await db.collection('memberships').deleteMany({ groupId: targetId });
-        await db.collection('channels').deleteMany({ groupId: targetId });
+        const result = await db.collection('groups').deleteOne({ _id: targetGroupId });
+        if (result.deletedCount === 0) return res.status(404).json({ error: 'Group not found' });
+        // delete any dependent entries
+        await db.collection('memberships').deleteMany({ groupId: targetGroupId });
+        await db.collection('channels').deleteMany({ groupId: targetGroupId });
 
         // return result
         res.json({ success: true });
