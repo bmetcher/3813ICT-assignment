@@ -2,10 +2,11 @@ export class Ban {
     constructor(
         _id: string,
         userId: string,
-        targetId: string,
-        targetType: "group" | "channel",
+        groupId: string,
+        channelId: string | null,
         date: Date,
+        bannedBy: string,
         reason?: string,
-        duration?: number
+        expiresAt?: Date
     ) {}
 }

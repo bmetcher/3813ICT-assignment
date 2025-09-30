@@ -14,6 +14,8 @@ const adminRoutes = require('./routes/api/adminRoutes');
 // New Routes
 const usersRoutes = require('./routes/api/users');
 const loginRoutes = require('./routes/api/login');
+const groupsRoutes = require('./routes/api/groups');
+const channelsRoutes = require('./routes/api/channels');
 
 const app = express();
 const PORT = 3000;
@@ -32,9 +34,9 @@ async function startServer() {
         // app.use('/api/bans', bansRoutes);
         app.use('/api/login', loginRoutes);
         app.use('/api/users', usersRoutes);
-        
-        // app.use('/api/groups', groupsRoutes);
-        // app.use('/api/channels', channelsRoutes);
+        app.use('/api/groups', groupsRoutes);
+        app.use('/api/channels', channelsRoutes);
+
         // app.use('/api/messages', messagesRoutes);
         // app.use('/api/memberships', membershipsRoutes);
 

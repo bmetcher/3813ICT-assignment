@@ -2,14 +2,15 @@ const express = require('express');
 const router = express.Router();
 const { getDb } = require('../../mongo');
 const { ObjectId } = require('mongodb');
-const { authenticate } = require('../../utilities/auth');
+const { authenticate } = require('../../utilities/authMiddleware');
 const { requireAdmin } = require('../../utilities/accessControl');
 
 // POST create a new channel
-router.post('/', authenticate, requireAdmin, async (req, res) => {
+router.post('/', authenticate, async (req, res) => {
     try {
         const db = getDb();
         const { channel } = req.body;
+        await requireAdmin(db, req.userId, targetGroupId);
 
         // validate input
         if (!channel || !channel.name || !channel.groupId) {
@@ -27,7 +28,7 @@ router.post('/', authenticate, requireAdmin, async (req, res) => {
         if (existing) return res.status(409).json({ error: 'Channel with that name already exists' });
 
         // initialize a channel object
-        const channelObj = {
+        const newChannel = {
             name: channel.name,
             groupId: newGroupId,
             bannedUsers: [],
@@ -36,7 +37,7 @@ router.post('/', authenticate, requireAdmin, async (req, res) => {
         };
         
         // insert channel
-        const { insertedId: channelId } = await db.collection('channels').insertOne(channelObj);
+        const { insertedId: channelId } = await db.collection('channels').insertOne(newChannel);
         res.status(201).json({ channelId, success: true });
     } catch (err) {
         res.status(400).json({ error: err.message });
@@ -68,11 +69,12 @@ router.get('/:groupId', authenticate, async (req, res) => {
 });
 
 // PUT edit channel (name, description) by channelId
-router.put('/:channelId', authenticate, requireAdmin, async (req, res) => {
+router.put('/:channelId', authenticate, async (req, res) => {
     try {
         const db = getDb();
         const targetChannelId = new ObjectId(req.params.channelId);
         const { name, description } = req.body;
+        await requireAdmin(db, req.userId, targetGroupId);
 
         // check channel exists
         const channel = await db.collection('channels').findOne({ _id: targetChannelId });
@@ -102,6 +104,7 @@ router.delete('/:channelId', authenticate, async (req, res) => {
     try {
         const db = getDb();
         const targetChannelId = new ObjectId(req.params.channelId);
+        await requireAdmin(db, req.userId, targetGroupId);
 
         // delete the channel
         const result = await db.collection('channels').deleteOne({ _id: targetChannelId });

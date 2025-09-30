@@ -1,16 +1,17 @@
 const express = require('express');
 const router = express.Router();
 const bcrypt = require('bcrypt');       // for hashing passwords
-const authenticate = require('../../utilities/auth');
+const authenticate = require('../../utilities/authMiddleware');
 const { getDb } = require('../../mongo');
-const { requireAdmin, requireSuper } = require('../../utilities/accessControl');
+const { requireSuper } = require('../../utilities/accessControl');
 const { ObjectId } = require('mongodb');
 
 // CREATE a user
-router.post('/', authenticate, requireSuper, async (req, res) => {
+router.post('/', authenticate, async (req, res) => {
     try {
         const db = getDb();
         const { password, ...rest } = req.body;
+        await requireSuper(db, req.userId);
 
         if (!password) return res.status(400).json({ error: 'No password to hash' });
         
@@ -30,14 +31,14 @@ router.post('/', authenticate, requireSuper, async (req, res) => {
 });
 
 // GET users belonging to a given group ID
-router.get('/group/:groupId', async (req, res) => {
+router.get('/group/:groupId', authenticate, async (req, res) => {
     try {
         const db = getDb();
-        const targetId = new ObjectId(req.params.groupId);
+        const targetGroupId = new ObjectId(req.params.groupId);
 
         // find all memberships for this group
         const memberships = await db.collection('memberships')
-            .find({ groupId: targetId })
+            .find({ groupId: targetGroupId })
             .toArray();
 
         const userIds = memberships.map(mem => mem.userId);
@@ -58,13 +59,13 @@ router.get('/group/:groupId', async (req, res) => {
 
 // * could probably handle this better..
 // GET users belonging to a given channel ID (attach their roles)
-router.get('/channel/:channelId', async (req, res) => {
+router.get('/channel/:channelId', authenticate, async (req, res) => {
     try {
         const db = getDb();
-        const channelId = new ObjectId(req.params.channelId);
+        const targetChannelId = new ObjectId(req.params.channelId);
 
         // fetch channel's groupId
-        const channel = await db.collection('channels').findOne({ _id: channelId });
+        const channel = await db.collection('channels').findOne({ _id: targetChannelId });
         if (!channel) return res.status(404).json({ error: 'Channel not found' });
         const groupId = (channel.groupId instanceof ObjectId) ? channel.groupId : new ObjectId(channel.groupId);
 
@@ -74,6 +75,7 @@ router.get('/channel/:channelId', async (req, res) => {
             .toArray();
         const userIds = memberships.map(mem => mem.userId);
 
+        // niche case; return empty list
         if (userIds.length === 0) return res.json({ users: [], success: true });
 
         // find any existing channel bans
@@ -81,8 +83,12 @@ router.get('/channel/:channelId', async (req, res) => {
             .find({
                 userId: { $in: userIds },
                 $or: [
-                    { targetId: channelId, targetType: 'channel' },
+                    { targetId: targetChannelId, targetType: 'channel' },
                     { targetId: groupId,   targetType: 'group' }
+                ],
+                $or: [
+                    { expiresAt: null },        // permanent
+                    { expiresAt: { $gt: now } } // active
                 ]
             })
             .toArray();
@@ -116,7 +122,7 @@ router.get('/channel/:channelId', async (req, res) => {
 router.put('/:userId', authenticate, async (req, res) => {
     try {
         const db = getDb();
-        const targetId = new ObjectId(req.params.userId);
+        const targetUserId = new ObjectId(req.params.userId);
 
         // check permission
         if (req.userId !== req.params.userId) return res.status(403).json({ error: 'Forbidden' });
@@ -132,13 +138,13 @@ router.put('/:userId', authenticate, async (req, res) => {
 
         // update user
         await db.collection('users').updateOne(
-            { _id: targetId },
+            { _id: targetUserId },
             { $set: update }
         );
 
         // return result
         const updatedUser = await db.collection('users').findOne(
-            { _id: targetId },
+            { _id: targetUserId },
             { projection: { password: 0 } }
         );
         res.json({ updatedUser, success: true });
@@ -151,9 +157,9 @@ router.put('/:userId', authenticate, async (req, res) => {
 router.put('/:userId/password', authenticate, async (req, res) => {
     try {
         const db = getDb();
-        const targetId = new ObjectId(req.params.userId);
+        const targetUserId = new ObjectId(req.params.userId);
         // verify the user
-        const user = await db.collection('users').findOne({ _id: targetId });
+        const user = await db.collection('users').findOne({ _id: targetUserId });
         if (!user) return res.status(404).json({ error: 'User not found' });
         if (req.userId !== req.params.userId) return res.status(403).json({ error: 'Forbidden' });
 
@@ -165,7 +171,7 @@ router.put('/:userId/password', authenticate, async (req, res) => {
         // hash and update the password
         const hashed = await bcrypt.hash(newPassword, 10);
         await db.collection('users').updateOne(
-            { _id: targetId }, 
+            { _id: targetUserId }, 
             { $set: { password: hashed } }
         );
         res.json({ success: true });
@@ -175,18 +181,19 @@ router.put('/:userId/password', authenticate, async (req, res) => {
 });
 
 // DELETE a user by ID
-router.delete('/:userId', authenticate, requireAdmin, async (req, res) => {
+router.delete('/:userId', authenticate, async (req, res) => {
     try {
         const db = getDb();
-        const targetId = new ObjectId(req.params.userId);
+        const targetUserId = new ObjectId(req.params.userId);
+        await requireSuper(db, req.userId);
 
         // find the group of the user we want to delete
-        const membership = await db.collection('memberships').findOne({ userId: targetId });
+        const membership = await db.collection('memberships').findOne({ userId: targetUserId });
         if (!membership) return res.status(404).json({ error: 'Membership not found' });
 
         // safe to delete the user
-        await db.collection('users').deleteOne({ _id: targetId });
-        await db.collection('memberships').deleteMany({ userId: targetId });
+        await db.collection('users').deleteOne({ _id: targetUserId });
+        await db.collection('memberships').deleteMany({ userId: targetUserId });
         res.json({ success: true });
     } catch (err) {
         res.status(400).json({ error: err.message });

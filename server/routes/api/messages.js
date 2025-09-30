@@ -7,20 +7,23 @@ const Message = require('../../models/message.model');
 const canAccessChannel = require('../../utilities/accessControl');
 
 // POST a new channel message
-router.post('/', async (req, res) => {
+router.post('/channel/:channelId', authenticate, async (req, res) => {
     try {
         const db = getDb();
-        const { userId, channelId, content, attachment, replyTo } = req.body;
+        const targetUserId = new ObjectId(req.userId);
+        const targetChannelId = new ObjectId(req.params.channelId);
+        const { content, attachment, replyTo } = req.body;
 
-        const access = await canAccessChannel(db, userId, channelId);
+        // check the user is unbanned and in the channel
+        const access = await canAccessChannel(db, targetUserId, targetChannelId);
         if (!access.ok) {
             return res.status(access.error.code).json({ error: access.error.msg });
         }
 
         // set new message values
         const message = {
-            channelId,
-            userId,
+            channelId: targetChannelId,
+            userId: targetUserId,
             content,
             attachment: attachment || null,
             replyTo: replyTo || null,
@@ -29,15 +32,105 @@ router.post('/', async (req, res) => {
 
         // insert the message -> send back copy with it's assigned '_id'
         const result = await db.collection('messages').insertOne(message);
-        res.status(201).json({ ...message, _id: result.insertedId });
+        res.status(201).json({ ...message, _id: result.insertedId, success: true });
     } catch (err) {
         res.status(400).json({ error: err.message });
     }
 });
 
-// GET messages of a channel
-router.get('/', async (req, res) => {
-    
-})
+// GET messages of a channel (with pagination)
+router.get('/channel/:channelId', authenticate, async (req, res) => {
+    try {
+        const db = getDb();
+        const targetUserId = new ObjectId(req.userId);
+        const targetChannelId = new ObjectId(req.params.channelId);
 
+        // verify user has access to the channel
+        const access = await canAccessChannel(db, targetUserId, targetChannelId);
+        if (!access.ok) {
+            return res.status(access.error.code).json({ error: access.error.msg });
+        }
+
+        // limit by messages and sort by time
+        const limit = parseInt(req.query.limit) || 50;  // default is 50 messages
+        const lastTimestamp = req.query.before ? new Date(req.query.before) : null;
+
+        // build the query
+        const query = { channelId: targetChannelId };
+        if (lastTimestamp) query.timestamp = { $lt: lastTimestamp };
+
+        // search by query in order
+        const messages = await db.collection('messages')
+            .find(query)
+            .sort({ timestamp: -1 })
+            .limit(limit)
+            .toArray();
+
+        // reverse: show oldest messages at the top
+        messages.reverse();
+
+        res.json({ messages, success: true });
+    } catch (err) {
+        res.status(400).json({ error: err.message });
+    }
+});
+
+// PUT edit user's own message
+router.put('/channel/:channelId/message/:messageId', authenticate, async (req, res) => {
+    try {
+        const db = getDb();
+        const targetUserId = new ObjectId(req.userId);
+        const targetChannelId = new ObjectId(req.params.channelId);
+        const targetMessageId = new ObjectId(req.params.messageId);
+        const { content } = req.body;
+
+        // verify user has access to the channel
+        const access = await canAccessChannel(db, targetUserId, targetChannelId);
+        if (!access.ok) {
+            return res.status(access.error.code).json({ error: access.error.msg });
+        }
+
+        // check message belongs to the user
+        const targetMessage = await db.collection('messages').findOne({ _id: targetMessageId });
+        if (!targetMessage.userId.equals(targetUserId)) return res.status(403).json({ error: 'Forbidden' });
+
+        // update message
+        await db.collection('messages').updateOne(
+            { _id: targetMessageId },
+            { $set: { content } }
+        );
+
+        // return result
+        const updatedMessage = await db.collection('messages').findOne({ _id: targetMessageId });
+        res.json({ updatedMessage, success: true });
+    } catch (err) {
+        res.status(400).json({ error: err.message });
+    }
+});
+
+// DELETE the user's message
+router.delete('/channel/:channelId/message/:messageId', authenticate, async (req, res) => {
+    try {
+        const db = getDb();
+        const targetUserId = new ObjectId(req.userId);
+        const targetChannelId = new ObjectId(req.params.channelId);
+        const targetMessageId = new ObjectId(req.params.messageId);
+
+        // verify user has access to the channel
+        const access = await canAccessChannel(db, targetUserId, targetChannelId);
+        if (!access.ok) {
+            return res.status(access.error.code).json({ error: access.error.msg });
+        }
+
+        // check message belongs to the user
+        const targetMessage = await db.collection('messages').findOne({ _id: targetMessageId });
+        if (!targetMessage.userId.equals(targetUserId)) return res.status(403).json({ error: 'Forbidden' });
+
+        // delete message
+        await db.collection('messages').deleteOne({ _id: targetMessageId });
+        res.json({ success: true });
+    } catch (err) {
+        res.status(400).json({ error: err.message });
+    }
+})
 module.exports = router;

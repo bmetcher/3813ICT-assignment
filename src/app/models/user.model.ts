@@ -11,7 +11,6 @@ export class User {
     public dob: Date,
 
     public password?: string,   // Phase 1 only; not secure
-    public superAdmin: boolean = false,
     public valid: boolean = false,
   ) {}
 }

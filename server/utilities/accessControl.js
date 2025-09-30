@@ -1,9 +1,9 @@
 const { ObjectId } = require('mongodb');
 
-// Check a user is an unbanned member of a channel
+// Check a user is an unbanned member of a channel (Mongo ID: userId, channelId)
 async function canAccessChannel(db, userId, channelId) {
     // fetch the channel for its groupId
-    const channel = await db.collection('channels').findOne({ _id: ObjectId(channelId) });
+    const channel = await db.collection('channels').findOne({ _id: channelId });
     if (!channel) return { ok: false, error: { code: 404, msg: 'Channel not found' } };
 
     // validate user has membership first
@@ -17,8 +17,12 @@ async function canAccessChannel(db, userId, channelId) {
     const banned = await db.collection('bans').findOne({
         userId,
         $or: [
-            { targetId: channelId, targetType: 'channel' },
-            { targetId: channel.groupId, targetType: 'group' }
+            { channelId },
+            { groupId: channel.groupId }
+        ],
+        $or: [
+            { expiresAt: { $gt: new Date() } },
+            { expiresAt: null }
         ]
     });
     if (banned) return { ok: false, error: { code: 403, msg: 'User is banned from this channel' } };
@@ -52,4 +56,4 @@ async function requireSuper(db, userId) {
 }
 
 
-module.exports = { canAccessChannel, requireAdmin };
+module.exports = { canAccessChannel, requireAdmin, requireSuper };    

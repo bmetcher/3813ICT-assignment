@@ -3,6 +3,6 @@ export class Membership {
         public _id: string,
         public userId: string,
         public groupId: string,
-        public role: "user" | "admin"
+        public role: "user" | "admin" | "super"
     ) {}
 }

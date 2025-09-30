@@ -4,6 +4,7 @@ export class Channel {
     public groupId: string,
     public name: string,
     public description: string,
-    public bannedUsers: string[] = []
+    public bannedUsers: string[] = [],
+    public createdAt: Date
   ) {}
 }

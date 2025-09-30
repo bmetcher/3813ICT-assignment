@@ -151,12 +151,45 @@ Currently Phase 1 is frontend-only, but the intended architecture will include a
 /server
 └ server.js
 ```
-#### Planned Routes:
+#### Endpoints
+
 ```
-POST /login
-GET /users
-GET /groups
-GET /channels/:groupId
+// Most endpoints return relevant object;
+// All endpoints return "success: true"
+
+(KEY)
+*   = Authenticate
+**  = Require Admin
+*** = Require Super Admin
+
+[USERS.JS] ('/users')
+*** POST('/') -- create new user
+*   GET('/group/:groupId') -- fetch users belonging to a group
+*   GET('/channel/:channelId') -- fetch users (+roles) belonging to a given channel 
+*   PUT('/:userId') -- update a user's details
+*   PUT('/:userId/password') -- update a user's password
+**  DELETE('/:userId') -- delete a user
+
+[GROUPS.JS] ('/groups')
+*** POST('/') -- create a new group
+*   GET('/:userId') -- get all groups of a user
+**  PUT('/:groupId') -- edit group details (name, image)
+*** PUT('/:groupId/:userId') -- grant/revoke admin status of a user
+**  PUT('/:groupId/:userId/invite') -- add a user to a group
+*** DELETE('/:groupId') -- delete a group (& dependent channels, memberships)
+
+[CHANNELS.JS] ('/channels')
+**  POST('/') -- create a new channel
+*   GET('/:groupId') -- get channels (by groupId)
+**  PUT('/:channelId') -- edit channel details (name, description)
+**  DELETE('/:channelId') -- delete channel
+
+[BANS.JS] ('/bans')
+**  POST('/group/:groupId/user/:userId') -- ban a user from a group
+**  POST('/channel/:channelId/user/:userId') -- ban a user from a channel
+**  GET('/target/targetId/active') -- read active bans of a target (group | channel | user)
+**  GET('/target/:targetId/all') -- read all bans of a target (group | channel | user)
+[MESSAGES.JS] ('/messages')
 ```
 
 

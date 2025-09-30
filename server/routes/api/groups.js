@@ -6,10 +6,11 @@ const { authenticate } = require('../../utilities/auth');
 const { requireAdmin, requireSuper } = require('../../utilities/accessControl');
 
 // POST create a new group
-router.post('/', authenticate, requireSuper, async (req, res) => {
+router.post('/', authenticate, async (req, res) => {
     try {
         const db = getDb();
         const { group } = req.body;
+        await requireSuper(db, req.userId);
 
         // validate input
         if (!group || !group.name) {
@@ -24,7 +25,7 @@ router.post('/', authenticate, requireSuper, async (req, res) => {
         }
 
         // initialize base group
-        const groupObj = {
+        const newGroup = {
             name: group.name,
             imageUrl: req.body.imageUrl || 'public/groupIcons/default.png',
             bannedUsers: [],
@@ -32,7 +33,7 @@ router.post('/', authenticate, requireSuper, async (req, res) => {
             createdAt: new Date()
         }
         // insert group
-        const groupResult = await db.collection('groups').insertOne(groupObj);
+        const groupResult = await db.collection('groups').insertOne(newGroup);
         const groupId = groupResult.insertedId;
 
         // create a default channel
@@ -86,23 +87,24 @@ router.get('/:userId', authenticate, async (req, res) => {
 });
 
 // PUT to change group's name or image (requires admin || super)
-router.put('/:groupId', authenticate, requireAdmin, async (req, res) => {
+router.put('/:groupId', authenticate, async (req, res) => {
     try {
         const db = getDb();
         const targetGroupId = new ObjectId(req.params.groupId);
-        const { name, imageUrl } = req.body;
+        await requireAdmin(db, req.userId, targetGroupId);
 
         // check group exists
         const group = await db.collection('groups').findOne({ _id: targetGroupId });
         if (!group) return res.status(404).json({ error: 'Group not found' });
 
         // build new group object
+        const { name, imageUrl } = req.body;
         const update = {};
         if (name) update.name = name.trim();
         if (imageUrl) update.imageUrl = imageUrl;   // TODO: process & validate upload
 
         // update in DB
-        const result = await db.collection('groups').updateOne(
+        await db.collection('groups').updateOne(
             { _id: targetGroupId },
             { $set: update }
         );
@@ -116,12 +118,14 @@ router.put('/:groupId', authenticate, requireAdmin, async (req, res) => {
 })
 
 // PUT to grant/revoke Group Admin with a user
-router.put('/:groupId/:userId', authenticate, requireSuper, async (req, res) => {
+router.put('/:groupId/:userId', authenticate, async (req, res) => {
     try {
         const db = getDb();
         const targetGroup = req.params.groupId;
         const targetUser = req.params.userId;
         const { newRole } = req.body;
+        await requireSuper(db, req.userId);
+
 
         // check valid role requested
         if (!['user', 'admin'].includes(newRole)) {
@@ -149,11 +153,12 @@ router.put('/:groupId/:userId', authenticate, requireSuper, async (req, res) => 
 });
 
 // PUT add a user to a group
-router.put('/:groupId/:userId/invite', authenticate, requireAdmin, async (req, res) => {
+router.put('/:groupId/:userId/invite', authenticate, async (req, res) => {
     try {
         const db = getDb();
         const targetGroupId = new ObjectId(req.params.groupId);
         const targetUserId = new ObjectId(req.params.userId);
+        await requireAdmin(db, req.userId, targetGroupId);
 
         // check user banned
         const group = await db.collection('groups').findOne({ _id: targetGroupId });
@@ -183,10 +188,11 @@ router.put('/:groupId/:userId/invite', authenticate, requireAdmin, async (req, r
 });
 
 // DELETE a group (& dependent channels + memberships)
-router.delete('/:groupId', authenticate, requireSuper, async (req, res) => {
+router.delete('/:groupId', authenticate, async (req, res) => {
     try {
         const db = getDb();
         const targetGroupId = new ObjectId(req.params.groupId);
+        await requireSuper(db, req.userId);
 
         // delete the group
         const result = await db.collection('groups').deleteOne({ _id: targetGroupId });
