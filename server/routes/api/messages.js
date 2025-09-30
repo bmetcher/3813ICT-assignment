@@ -2,9 +2,10 @@ const express = require('express');
 const router = express.Router();
 const { ObjectId } = require('mongodb');
 const { getDb } = require('../../mongo');
-const { readJson } = require('../../utilities/fileHandler');
-const Message = require('../../models/message.model');
 const canAccessChannel = require('../../utilities/accessControl');
+
+// sockets.io for emitting message updates to sockets
+const { emitNewMessage, emitEditMessage, emitDeleteMessage } = require('../../sockets');
 
 // POST a new channel message
 router.post('/channel/:channelId', authenticate, async (req, res) => {
@@ -32,7 +33,10 @@ router.post('/channel/:channelId', authenticate, async (req, res) => {
 
         // insert the message -> send back copy with it's assigned '_id'
         const result = await db.collection('messages').insertOne(message);
-        res.status(201).json({ ...message, _id: result.insertedId, success: true });
+        const newMessage = { ...message, _id: result.insertedId, success: true };
+        // emit new message to room
+        emitNewMessage(newMessage._id);
+        res.status(201).json({ newMessage, success: true });
     } catch (err) {
         res.status(400).json({ error: err.message });
     }
@@ -100,8 +104,11 @@ router.put('/channel/:channelId/message/:messageId', authenticate, async (req, r
             { $set: { content } }
         );
 
-        // return result
+        // fetch result
         const updatedMessage = await db.collection('messages').findOne({ _id: targetMessageId });
+        // emit edit to room
+        emitEditMessage(updatedMessage._id);
+        // return result
         res.json({ updatedMessage, success: true });
     } catch (err) {
         res.status(400).json({ error: err.message });
@@ -128,9 +135,12 @@ router.delete('/channel/:channelId/message/:messageId', authenticate, async (req
 
         // delete message
         await db.collection('messages').deleteOne({ _id: targetMessageId });
+        // emit to room & return result
+        emitDeleteMessage(targetMessageId);
         res.json({ success: true });
     } catch (err) {
         res.status(400).json({ error: err.message });
     }
 })
+
 module.exports = router;

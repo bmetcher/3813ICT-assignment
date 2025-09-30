@@ -5,6 +5,8 @@ const { ObjectId } = require('mongodb');
 const { authenticate } = require('../../utilities/authMiddleware');
 const { requireAdmin } = require('../../utilities/accessControl');
 
+const { emitUserBanned, emitUserUnbanned } = require('../../sockets');
+
 // IMPLEMENT AUTOMATIC EXPIRATION CHECK & REMOVAL
 // WHEN WE FETCH THINGS ??
 
@@ -58,7 +60,9 @@ function createBanRoute() {
                 expiresAt
             };
 
+            // return result & emit the new ban
             const { insertedId } = await db.collection('bans').insertOne(newBan);
+            emitUserBanned(insertedId);
             res.status(201).json({ _id: insertedId, ...newBan, success: true });
         } catch (err) {
             res.status(400).json({ error: err.message });
@@ -156,8 +160,9 @@ router.delete('/:banId', authenticate, async (req, res) => {
 
         await requireAdmin(db, req.userId, targetBan.groupId);
 
-        // delete ban and return result
+        // delete ban; return result and emit the unban
         const result = await db.collection('bans').deleteOne({ _id: targetBanId });
+        emitUserUnbanned(targetBanId);
         res.json({ result, success: true });
     } catch (err) {
         res.status(400).json({ error: err.message });

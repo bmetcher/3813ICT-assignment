@@ -16,3 +16,6 @@
   - validation: "check group exists" etc.
 
 * bans.js: User appealing a ban
+* messages:
+  - edit & delete "history" (Undo? show "Edited/Deleted"?)
+  
