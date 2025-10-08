@@ -2,8 +2,15 @@ const express = require('express');
 const router = express.Router();
 const { getDb } = require('../../mongo');
 const { ObjectId } = require('mongodb');
-const { authenticate } = require('../../utilities/auth');
+const { authenticate } = require('../../utilities/authMiddleware');
 const { requireAdmin, requireSuper } = require('../../utilities/accessControl');
+
+const { 
+    emitGroupUpdated, emitGroupDeleted, 
+    emitChannelDeleted, 
+    emitMembershipCreated, emitMembershipUpdated, emitMembershipDeleted,
+    emitChannelCreated, emitChannelDeleted
+    } = require('../../sockets');
 
 // POST create a new group
 router.post('/', authenticate, async (req, res) => {
@@ -35,22 +42,29 @@ router.post('/', authenticate, async (req, res) => {
         // insert group
         const groupResult = await db.collection('groups').insertOne(newGroup);
         const groupId = groupResult.insertedId;
-
+        
         // create a default channel
-        await db.collection('channels').insertOne({
+        const defaultChannel = {
             groupId,
             name: 'Default',
             description: "Default channel",
             bannedUsers: [],
             createdBy: req.userId,
             createdAt: new Date()
-        });
+        }
+        const channelResult = await db.collection('channels').insertOne({ defaultChannel });
         // create a membership for the admin
-        await db.collection('memberships').insertOne({
+        const newMembership = {
             userId: req.userId,
             groupId,
             role: 'super',
-        });
+        }
+        const membershipResult = await db.collection('memberships').insertOne({ newMembership });
+        // collect and emit the new objects
+        newChannel = { ...defaultChannel, _id: channelResult.insertedId };
+        newMembership = { ...newMembership, _id: membershipResult.insertedId };
+        emitChannelCreated(newChannel);
+        emitMembershipCreated(newMembership);
 
         // return result
         res.status(201).json({ ...groupObj, _id: groupId, success: true });
@@ -111,6 +125,7 @@ router.put('/:groupId', authenticate, async (req, res) => {
 
         // return success
         const updatedGroup = await db.collection('groups').findOne({ _id: targetGroupId });
+        emitGroupUpdated(updatedGroup);
         res.json({ group: updatedGroup, success: true });
     } catch (err) {
         res.status(400).json({ error: err.message });
@@ -125,7 +140,6 @@ router.put('/:groupId/:userId', authenticate, async (req, res) => {
         const targetUser = req.params.userId;
         const { newRole } = req.body;
         await requireSuper(db, req.userId);
-
 
         // check valid role requested
         if (!['user', 'admin'].includes(newRole)) {
@@ -144,8 +158,9 @@ router.put('/:groupId/:userId', authenticate, async (req, res) => {
             { $set: { role: newRole } }
         );
 
-        // return the updated membership
+        // emit & return the updated membership
         const updatedMembership = await db.collection('memberships').findOne({ groupId: targetGroup, userId: targetUser });
+        emitMembershipUpdated(updatedMembership);
         res.json({ updatedMembership, success: true });
     } catch (err) {
         res.status(400).json({ error: err.message });
@@ -175,11 +190,12 @@ router.put('/:groupId/:userId/invite', authenticate, async (req, res) => {
         if (existingMembership) return res.status(400).json({ error: 'User is already a member' });
 
         // add membership
-        await db.collection('memberships').insertOne({
+        const membership = await db.collection('memberships').insertOne({
             groupId: targetGroupId,
             userId: targetUserId,
             role: 'user'
         });
+        emitMembershipCreated(membership);
 
         res.json({ success: true });
     } catch (err) {
@@ -195,13 +211,22 @@ router.delete('/:groupId', authenticate, async (req, res) => {
         await requireSuper(db, req.userId);
 
         // delete the group
-        const result = await db.collection('groups').deleteOne({ _id: targetGroupId });
-        if (result.deletedCount === 0) return res.status(404).json({ error: 'Group not found' });
-        // delete any dependent entries
+        const targetGroup = await db.collection('groups').findOne({ _id: targetGroupId });
+        if (!targetGroup) return res.status(404).json({ error: 'Group not found' });
+        await db.collection('groups').deleteOne({ targetGroup });
+        
+        // find any dependent entries
+        const targetMemberships = await db.collection('memberships').find({ groupId: targetGroupId });
+        const targetChannels = await db.collection('channels').find({ groupId: targetGroupId });
+        // delete those too
         await db.collection('memberships').deleteMany({ groupId: targetGroupId });
         await db.collection('channels').deleteMany({ groupId: targetGroupId });
 
-        // return result
+        // emit all deletions
+        targetMemberships.forEach(member => emitMembershipDeleted(member));
+        targetChannels.forEach(ch => emitChannelDeleted(ch));
+        emitGroupDeleted(targetGroup);
+
         res.json({ success: true });
     } catch (err) {
         res.status(400).json({ error: err.message });

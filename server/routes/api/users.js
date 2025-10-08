@@ -6,6 +6,8 @@ const { getDb } = require('../../mongo');
 const { requireSuper } = require('../../utilities/accessControl');
 const { ObjectId } = require('mongodb');
 
+const { emitUserUpdated, emitUserDeleted } = require('../../sockets');
+
 // CREATE a user
 router.post('/', authenticate, async (req, res) => {
     try {
@@ -20,11 +22,11 @@ router.post('/', authenticate, async (req, res) => {
         const user = { ...rest, password: hashed };
         
         // insert into the db
-        const { insertedId } = await db.collection('users').insertOne(user);
+        const userResult = await db.collection('users').insertOne(user);
 
         // return without any password
-        const { password: _, ...safeUser } = user;
-        res.status(201).json({ _id: insertedId, ...safeUser, success: true });
+        const safeUser = { user, _id: userResult._id, password: _ };
+        res.status(201).json({ createdUser: safeUser, success: true });
     } catch (err) {
         res.status(400).json({ error: err.message });
     }
@@ -51,7 +53,7 @@ router.get('/group/:groupId', authenticate, async (req, res) => {
             )
             .toArray();
 
-        res.json({ users, success: true });
+        res.json({ users: users, success: true });
     } catch (err) {
         res.status(400).json({ error: err.message });
     }
@@ -147,7 +149,8 @@ router.put('/:userId', authenticate, async (req, res) => {
             { _id: targetUserId },
             { projection: { password: 0 } }
         );
-        res.json({ updatedUser, success: true });
+        emitUserUpdated(updatedUser);
+        res.json({ updatedUser: updatedUser, success: true });
     } catch (err) {
         res.status(400).json({ error: err.message });
     }
@@ -191,10 +194,20 @@ router.delete('/:userId', authenticate, async (req, res) => {
         const membership = await db.collection('memberships').findOne({ userId: targetUserId });
         if (!membership) return res.status(404).json({ error: 'Membership not found' });
 
-        // safe to delete the user
+        // find user
+        const targetUser = await db.collection('users').findOne({ _id: targetUserId });
+        if (!targetUser) return res.status(404).json({ error: 'User not found' });
+        // their memberships
+        const targetMemberships = await db.collection('memberships').findMany({ userId: targetUserId });
+        if (!targetMemberships) return res.status(404).json({ error: 'Memberships not found' });
+        // delete all items
         await db.collection('users').deleteOne({ _id: targetUserId });
         await db.collection('memberships').deleteMany({ userId: targetUserId });
-        res.json({ success: true });
+        // emit to room/s
+        emitUserDeleted(targetUser);
+        targetMemberships.forEach(member => emitMembershipDeleted(member));
+
+        res.json({ deletedUser: targetUser, success: true });
     } catch (err) {
         res.status(400).json({ error: err.message });
     }

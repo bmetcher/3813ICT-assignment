@@ -5,7 +5,7 @@ const { getDb } = require('../../mongo');
 const canAccessChannel = require('../../utilities/accessControl');
 
 // sockets.io for emitting message updates to sockets
-const { emitNewMessage, emitEditMessage, emitDeleteMessage } = require('../../sockets');
+const { emitMessageCreated, emitMessageUpdated, emitMessageDeleted } = require('../../sockets');
 
 // POST a new channel message
 router.post('/channel/:channelId', authenticate, async (req, res) => {
@@ -33,10 +33,10 @@ router.post('/channel/:channelId', authenticate, async (req, res) => {
 
         // insert the message -> send back copy with it's assigned '_id'
         const result = await db.collection('messages').insertOne(message);
-        const newMessage = { ...message, _id: result.insertedId, success: true };
+        const newMessage = { ...message, _id: result.insertedId };
         // emit new message to room
-        emitNewMessage(newMessage._id);
-        res.status(201).json({ newMessage, success: true });
+        emitMessageCreated(newMessage);
+        res.status(201).json({ createdMessage: newMessage, success: true });
     } catch (err) {
         res.status(400).json({ error: err.message });
     }
@@ -73,7 +73,7 @@ router.get('/channel/:channelId', authenticate, async (req, res) => {
         // reverse: show oldest messages at the top
         messages.reverse();
 
-        res.json({ messages, success: true });
+        res.json({ messages: messages, success: true });
     } catch (err) {
         res.status(400).json({ error: err.message });
     }
@@ -107,9 +107,9 @@ router.put('/channel/:channelId/message/:messageId', authenticate, async (req, r
         // fetch result
         const updatedMessage = await db.collection('messages').findOne({ _id: targetMessageId });
         // emit edit to room
-        emitEditMessage(updatedMessage._id);
+        emitMessageUpdated(updatedMessage);
         // return result
-        res.json({ updatedMessage, success: true });
+        res.json({ updatedMessage: updatedMessage, success: true });
     } catch (err) {
         res.status(400).json({ error: err.message });
     }
@@ -136,8 +136,8 @@ router.delete('/channel/:channelId/message/:messageId', authenticate, async (req
         // delete message
         await db.collection('messages').deleteOne({ _id: targetMessageId });
         // emit to room & return result
-        emitDeleteMessage(targetMessageId);
-        res.json({ success: true });
+        emitMessageDeleted(targetMessage);
+        res.json({ deletedMessage: targetMessage, success: true });
     } catch (err) {
         res.status(400).json({ error: err.message });
     }

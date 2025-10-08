@@ -5,10 +5,7 @@ const { ObjectId } = require('mongodb');
 const { authenticate } = require('../../utilities/authMiddleware');
 const { requireAdmin } = require('../../utilities/accessControl');
 
-const { emitUserBanned, emitUserUnbanned } = require('../../sockets');
-
-// IMPLEMENT AUTOMATIC EXPIRATION CHECK & REMOVAL
-// WHEN WE FETCH THINGS ??
+const { emitBanCreated, emitBanUpdated, emitBanDeleted } = require('../../sockets');
 
 // POST ban routes
 router.post('/group/:groupId/user/:userId', authenticate, createBanRoute());
@@ -62,8 +59,9 @@ function createBanRoute() {
 
             // return result & emit the new ban
             const { insertedId } = await db.collection('bans').insertOne(newBan);
-            emitUserBanned(insertedId);
-            res.status(201).json({ _id: insertedId, ...newBan, success: true });
+            newBan._id = insertedId;
+            emitBanCreated(newBan);
+            res.status(201).json({ ban: newBan, success: true });
         } catch (err) {
             res.status(400).json({ error: err.message });
         }
@@ -106,7 +104,7 @@ function createGetBansRoute(allBans = false) {
             const bans = await db.collection('bans')
                 .find(query)
                 .toArray();
-            res.json({ bans, success: true });
+            res.json({ bans: bans, success: true });
         } catch (err) {
             res.status(400).json({ error: err.message });
         }
@@ -135,18 +133,19 @@ router.put('/:banId', authenticate, async (req, res) => {
         }
 
         // update ban in db
-        const result = await db.collection('bans').updateOne(
+        await db.collection('bans').updateOne(
             { _id: targetBanId },
             { $set: update }
         );
 
         // return result
         const updatedBan = await db.collection('bans').findOne({ _id: targetBanId });
-        res.json({ ban: updatedBan, success: true });
+        emitBanUpdated(updatedBan);
+        res.json({ updatedBan: updatedBan, success: true });
     } catch (err) {
         res.status(400).json({ error: err.message });
     }
-})
+});
 
 // DELETE a ban
 router.delete('/:banId', authenticate, async (req, res) => {
@@ -162,8 +161,8 @@ router.delete('/:banId', authenticate, async (req, res) => {
 
         // delete ban; return result and emit the unban
         const result = await db.collection('bans').deleteOne({ _id: targetBanId });
-        emitUserUnbanned(targetBanId);
-        res.json({ result, success: true });
+        emitBanDeleted(targetBan);
+        res.json({ deletedBan: targetBan, success: true });
     } catch (err) {
         res.status(400).json({ error: err.message });
     }

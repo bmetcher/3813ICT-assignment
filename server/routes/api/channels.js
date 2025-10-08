@@ -4,6 +4,7 @@ const { getDb } = require('../../mongo');
 const { ObjectId } = require('mongodb');
 const { authenticate } = require('../../utilities/authMiddleware');
 const { requireAdmin } = require('../../utilities/accessControl');
+const { emitChannelCreated, emitChannelUpdated, emitChannelDeleted } = require('../../sockets');
 
 // POST create a new channel
 router.post('/', authenticate, async (req, res) => {
@@ -35,10 +36,12 @@ router.post('/', authenticate, async (req, res) => {
             createdBy: new ObjectId(req.userId),
             createdAt: new Date()
         };
-        
         // insert channel
-        const { insertedId: channelId } = await db.collection('channels').insertOne(newChannel);
-        res.status(201).json({ channelId, success: true });
+        const channelResult = await db.collection('channels').insertOne(newChannel);
+        newChannel = { ...newChannel, _id: channelResult._id };
+        emitChannelCreated(newChannel);
+
+        res.status(201).json({ newChannel, success: true });
     } catch (err) {
         res.status(400).json({ error: err.message });
     }
@@ -86,13 +89,14 @@ router.put('/:channelId', authenticate, async (req, res) => {
         if (description) update.description = description ? description.trim() : '';
 
         // set the new channel
-        const result = await db.collection('channels').updateOne(
+        await db.collection('channels').updateOne(
             { _id: targetChannelId },
             { $set: update }
         );
 
         // return success
         const updatedChannel = await db.collection('channels').findOne({ _id: targetChannelId });
+        emitChannelUpdated(updatedChannel);
         res.json({ channel: updatedChannel, success: true });
     } catch (err) {
         res.status(400).json({ error: err.message });
@@ -107,9 +111,12 @@ router.delete('/:channelId', authenticate, async (req, res) => {
         await requireAdmin(db, req.userId, targetGroupId);
 
         // delete the channel
-        const result = await db.collection('channels').deleteOne({ _id: targetChannelId });
-        if (result.deletedCount === 0) return res.status(404).json({ error: 'Channel not found' });
+        const targetChannel = await db.collection('channels').findOne({ _id: targetChannelId });
+        if (!targetChannel) return res.status(404).json({ error: 'Channel not found' });
+        await db.collection('channels').deleteOne({ _id: targetChannelId });
 
+        // emit & return result
+        emitChannelDeleted(targetChannel);
         res.json({ success: true });
     } catch (err) {
         res.status(400).json({ error: err.message });

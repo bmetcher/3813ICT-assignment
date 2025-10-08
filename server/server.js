@@ -1,6 +1,7 @@
 const express = require('express'); // routing middleware
 const { connect } = require('./mongo');
 const cors = require('cors');
+const { checkExpiredBans } = require('./services/banService');
 
 // CRUD routes
 const usersRoutes = require('./routes/api/users');
@@ -31,7 +32,6 @@ async function startServer() {
         app.use('/api/bans', bansRoutes);
 
         // automatically check to remove expired bans
-        const { checkExpiredBans } = require('./services/banService');
         setInterval(() => {
             checkExpiredBans().catch(console.error);
         }, 5 * 60 * 1000 ); // every 5 minutes
