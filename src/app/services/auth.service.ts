@@ -73,11 +73,3 @@ export class AuthService {
     localStorage.setItem('currentUser', JSON.stringify(user));
   }
 }
-Login Component, Login Flow:
-    1. AuthService.login(email, password) -> token + userId
-    2. UsersService.getUser(userId) -> full user object
-    3. AuthService.setCurrentUser(user) -> store in signal/localStorage
-
-    // keeps auth isolated from CRUD
-    // components orchestrate what happens
-    // easier to maintain and test
