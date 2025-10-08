@@ -7,6 +7,7 @@ import { environment } from '../../environments/environment';
   providedIn: 'root'
 })
 export class SocketService {
+  // ** MAYBE: 1. guard for connect()  2. handle socket errors (debug)
   private socket?: Socket;
 
   private auth = inject(AuthService); // inject for tokens

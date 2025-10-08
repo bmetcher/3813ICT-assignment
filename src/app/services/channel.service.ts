@@ -1,43 +1,50 @@
-import { Injectable, signal, computed } from '@angular/core';
+import { Injectable, signal, computed, inject } from '@angular/core';
+import { HttpClient } from '@angular/common/http';
+import { environment } from '../../environments/environment';
 import { Channel } from '../models/channel.model';
-import { Group } from '../models/group.model';
-import { Channels, Groups } from '../dummy-data';
 
 @Injectable({
   providedIn: 'root'
 })
 export class ChannelService {
-  // selected channel from Navbar
+  private http = inject(HttpClient);
+  private API = `${environment.apiUrl}/channels`;
+
+  // currently selected channel
   private _selectedChannel = signal<Channel | null>(null);
-  
-  // read-only computed values from the selected channel
   readonly currentChannel = computed(() => this._selectedChannel());
-  readonly messages = computed(() => this._selectedChannel()?.messages ?? []);
 
-  // set current channel by ID
-  setChannel(channelId: string) {
-    const channel = Channels.find(ch => ch.id == channelId) ?? null;
+  // Fetch channels for a group
+  getChannelsByGroup(groupId: string) {
+    return this.http.get<{ channels: Channel[] }>(
+      `${this.API}/${groupId}`
+    );
+  }
+
+  // Create a new channel
+  createChannel(channel: Partial<Channel>) {
+    return this.http.post<{ newChannel: Channel }>(
+      this.API, { channel }
+    );
+  }
+
+  // Update a channel by ID
+  updateChannel(channelId: string, update: Partial<Channel>) {
+    return this.http.put<{ channel: Channel }>(
+      `${this.API}/${channelId}`, 
+      { update }
+    );
+  }
+
+  // Delete a channel
+  deleteChannel(channelId: string) {
+    return this.http.delete<{ success: boolean }>(
+      `${this.API}/${channelId}`
+    );
+  }
+
+  // Select a channel reactively
+  setSelectedChannel(channel: Channel | null) {
     this._selectedChannel.set(channel);
-  }
-
-  // add a message to the current channel
-  addMessage(message: { userId: string, content: string, timestamp: Date }) {
-    const channel = this._selectedChannel();
-    if (!channel) return;
-
-    // create a new array to handle immutability
-    const updatedChannel: Channel = {
-      ...channel,
-      messages: [...channel.messages, message]
-    }
-
-    // trigger reactivity manually
-    this._selectedChannel.set(updatedChannel);
-  }
-
-  // Check if a user's ID exists in the group's admin list
-  isGroupAdmin(userId: string, groupId: string): boolean {
-    const group = Groups.find(group => group.id === groupId);
-    return group ? group.admins.includes(userId) : false;
   }
 }

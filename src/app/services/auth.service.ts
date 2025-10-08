@@ -2,18 +2,15 @@ import { Injectable, signal, inject, computed } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Router } from '@angular/router';
 import { BehaviorSubject, tap } from 'rxjs';
+
 import { environment } from '../../environments/environment';
-
 import { User } from '../models/user.model';
-import { Group } from '../models/group.model';
-import { Channel } from '../models/channel.model';
-
-const API = 'http://localhost:3000/api';  // backend base URL
 
 @Injectable({
   providedIn: 'root'
 })
 export class AuthService {
+  private API = `${environment.apiUrl}`;
   // localStorage keys
   private tokenKey = 'chat_token';
   private userIdKey = 'chat_userId';
@@ -36,7 +33,7 @@ export class AuthService {
 
   // Login: send credentials to backend -> store token and userId
   login(email: string, password: string) {
-    return this.http.post<{ token: string; userId: string }>(`${API}/auth/login`, { email, password })
+    return this.http.post<{ token: string; userId: string }>(`${this.API}/auth/login`, { email, password })
       .pipe(tap(res => {
         localStorage.setItem(this.tokenKey, res.token);
         localStorage.setItem(this.userIdKey, res.userId);
@@ -70,6 +67,11 @@ export class AuthService {
   // Save current user to localStorage and update the reactive signal
   setCurrentUser(user: User | null) {
     this._user.set(user);
-    localStorage.setItem('currentUser', JSON.stringify(user));
+    this.setStatus(!!user); // true if user, false if null
+    if (user) {
+      localStorage.setItem('currentUser', JSON.stringify(user))
+    } else {
+      localStorage.removeItem('currentUser');
+    };
   }
 }
