@@ -2,17 +2,18 @@
     <!--input boxes-->
     <div class="formgroup">
         <label class="form-label" for="email">Email Address</label>
-        <input type="email" [(ngModel)]="email" id="email" name="email" class="form-control">
+        <input type="email" id="email" name="email" class="form-control"
+        [ngModel]="email" (ngModelChange)="email.set($event)">
     </div>
     <div class="form-group">
         <label class="form-label" for="password">Password</label>
-        <input type="password" [(ngModel)]="password" id="password" name="password" class="form-control">
+        <input type="password" id="password" name="password" class="form-control" 
+        [ngModel]="password" (ngModelChange)="password.set($event)">
     </div>
     
     <!--conditional error message-->
-    <div *ngIf="errorMsg" class="alert alert-danger"> {{ errorMsg }} </div>
+    <div *ngIf="errorMsg()" class="alert alert-danger"> {{ errorMsg() }} </div>
     <div class="form-group">
-        <!--generates an event on click-->
         <button type="submit" (click)="login($event)" class="btn btn-primary">Submit</button>
     </div>
 </div>

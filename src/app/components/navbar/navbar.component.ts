@@ -2,9 +2,7 @@ import { Component, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
 import { AuthService } from '../../services/auth.service';
-import { ChannelService } from '../../services/channel.service';
-import { Groups, Channels } from '../../dummy-data';
-
+import { ContextService } from '../../services/context.service';
 
 @Component({
   selector: 'app-navbar',
@@ -15,7 +13,7 @@ import { Groups, Channels } from '../../dummy-data';
 export class NavbarComponent {
   private router = inject(Router);
   private authService = inject(AuthService);
-  private channelService = inject(ChannelService);
+  private context = inject(ContextService);
 
   user = this.authService.currentUser;
 
@@ -29,20 +27,14 @@ export class NavbarComponent {
     console.log("profile pop-up should be here!");
   }
 
-  // getter for groups signal
+  // Fetch the current list of user groups from context service
   get userGroups() {
-    return this.authService.groups();
+    return this.context.groups();
   }
 
-  // "select" a channel to become active for Chat component
+  // Select an active channel for the Chat component
   selectChannel(channelId: string) {
-    this.channelService.setChannel(channelId);
-    console.log("New channel: " + channelId)
+    this.context.setCurrentChannel({ _id: channelId } as any);
+    console.log("New channel: " + channelId);
   }
-
-  // helper to get channel names
-  getChannelName(channelId: string) {
-    return Channels.find(ch => ch.id == channelId)?.name ?? 'Unknown';
-  }
-
 }

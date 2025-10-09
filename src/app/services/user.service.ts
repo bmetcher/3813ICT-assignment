@@ -21,7 +21,7 @@ export class UserService {
   // Update user data
   updateUser(userId: string, data: Partial<User>): Observable<User> {
     return this.http.put<User>(
-      `${this.API}/users/${userId}`, 
+      `${this.API}/users/${userId}`,
       data
     );
   }
@@ -29,7 +29,7 @@ export class UserService {
   // Update user password
   updatePassword(userId: string, oldPassword: string, newPassword: string) {
     return this.http.put(
-      `${this.API}/users/${userId}/password`, 
+      `${this.API}/users/${userId}/password`,
       { oldPassword, newPassword }
     );
   }

@@ -1,8 +1,8 @@
-import { Component, OnInit, OnDestroy, inject, signal } from '@angular/core';
+import { Component, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms'; // handle forms properly
 import { Router } from '@angular/router';
-import { Subscription } from 'rxjs';
 import { CommonModule } from '@angular/common';
+import { firstValueFrom } from 'rxjs';
 
 import { AuthService } from '../../services/auth.service';
 
@@ -15,50 +15,44 @@ import { AuthService } from '../../services/auth.service';
 export class LoginComponent {
   private authService = inject(AuthService);
   private router = inject(Router);
-  private loginSub?: Subscription;
 
-  email: string = "";
-  password: string = "";
-  errorMsg = "";
+  // form signals
+  email = signal('');
+  password = signal('');
+  errorMsg = signal('');
 
-  ngOnInit(): void {
-    const user = this.authService.getCurrentUser(); // try to get user
-    // log out an "expired" user
-    if (user && this.authService.isLoggedIn() == false) {
+  constructor() {
+    const user = this.authService.getCurrentUser();
+
+    if (user && !this.authService.isLoggedIn()) {
       alert("Session expired! Please log in again.");
       this.authService.logout();
     }
-    // redirect to chat for a logged in user
+
     if (this.authService.isLoggedIn()) {
       this.router.navigate(['/chat']);
     }
   }
 
-  // Attempt User Login
-  login(event: Event) {
+  async login(event: Event) {
     event.preventDefault();
-    this.errorMsg = "";
+    this.errorMsg.set('');
 
-    // subscribe to the authService observable
-    this.loginSub = this.authService.login(this.email, this.password).subscribe(
-      {
-        next: (data: any) => {
-          if (data.valid) {
-            this.authService.setCurrentUser(data);
-            this.router.navigate(['/chat']);
-          } else {
-            this.errorMsg = "Invalid Credentials";
-          }
-        },
-        error: (e) => console.log("Some error occurred", e),
-        complete: () => console.info("Complete!")
-      });
-  }
+    try {
+      const data = await firstValueFrom(
+        this.authService.login(this.email(), this.password())
+      );
 
-  // Clean-up
-  ngOnDestroy() {
-    if (this.loginSub) {
-      this.loginSub?.unsubscribe();
+      // backend returns { token, userId }
+      if (data?.token && data?.userId) {
+        this.authService.setCurrentUser({ _id: data.userId, email: this.email() } as any);
+        this.router.navigate(['/chat']);
+      } else {
+        this.errorMsg.set('Invalid Credentials');
+      }
+    } catch (err: any) {
+      console.error('Login error', err);
+      this.errorMsg.set('Login failed. Try again.');
     }
   }
 }

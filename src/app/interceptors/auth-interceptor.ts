@@ -4,10 +4,13 @@ import { AuthService } from '../services/auth.service';
 
 export const authInterceptor: HttpInterceptorFn = (req, next) => {
   const auth = inject(AuthService);
-  const token = auth.token$.value;  // JWT from BehaviorSubject
+  // grab current JWT from AuthService's BehaviourSubject
+  const token = auth.token$.value;
 
+  // no token: forward unchanged
   if (!token) return next(req);
 
+  // clone the request to add the Authorization header
   const cloned = req.clone({
     setHeaders: { Authorization: `Bearer ${token}` }
   });

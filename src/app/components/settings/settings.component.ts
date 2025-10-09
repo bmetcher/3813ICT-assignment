@@ -1,8 +1,11 @@
-import { Component, inject } from '@angular/core';
+import { Component, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { CommonModule } from '@angular/common';
 import { AuthService } from '../../services/auth.service';
+import { UserService } from '../../services/user.service';
 import { Router } from '@angular/router';
+import { User } from '../../models/user.model';
+import { firstValueFrom } from 'rxjs';
 
 @Component({
   selector: 'app-settings',
@@ -12,40 +15,73 @@ import { Router } from '@angular/router';
 })
 export class SettingsComponent {
   private authService = inject(AuthService);
+  private userService = inject(UserService);
   private router = inject(Router);
 
-  user = this.authService.currentUser();
-  originalUser: any = null;
-  editing = false;
+  editing = signal<boolean>(false);
+  errorMsg = signal<string>('');
+  saving = signal<boolean>(false);
 
-  // toggle editing user settings
+  // Local editable copy of user signal
+  editableUser = signal<User | null>(null);
+
+  constructor() {
+    // initialize from AuthService
+    const current = this.authService.currentUser();
+    if (current) this.editableUser.set({ ...current });
+  }
+
+
+  // Toggle edit mode in settings
   toggleEdit() {
-    if (!this.editing) {
-      // enter edit mode with a copy of user
-      this.originalUser = { ...this.user };
-      this.editing = true;
+    if (!this.editing()) {
+      // start editing: clone current user for editableUser
+      const current = this.authService.currentUser();
+      if (current) this.editableUser.set({ ...current });
+      this.editing.set(true);
     } else {
       // leave edit mode
       const confirmed = window.confirm("Save your changes?");
       if (confirmed) {
-        this.authService.setCurrentUser(this.user);
-      } else {
-        // restore old values if cancelled
-        this.user = { ...this.originalUser };
-        this.authService.setCurrentUser(this.user);
+        this.saveChanges();
       }
-      this.editing = false;
     }
   }
+
+
+  // Save changes to user edit
+  private async saveChanges() {
+    const user = this.editableUser();
+    if (!user) return;
+
+    this.saving.set(true);
+    this.errorMsg.set('');
+
+    try {
+      const updated = await firstValueFrom(this.userService.updateUser(user._id, user));
+      // update global AuthService signal
+      this.authService.setCurrentUser(updated);
+      this.editableUser.set({ ...updated });
+      this.editing.set(false);
+    } catch (err: any) {
+      console.error('Save failed', err);
+      this.errorMsg.set('Failed to save changes.');
+    } finally {
+      this.saving.set(false);
+    }
+  }
+
 
   // return to Chat component
   backToChat() {
     this.router.navigateByUrl('/chat');
   }
-  goToAdmin() {
-    this.router.navigateByUrl('/admin')
-  }
-  // helper for logout
+  // goToAdmin() {
+  //   this.router.navigateByUrl('/admin')
+  // }
+
+
+  // Logout helper
   logout() {
     const confirmed = window.confirm("Confirm logging out?");
       if (confirmed) {
