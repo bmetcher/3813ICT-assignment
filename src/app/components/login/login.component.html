@@ -3,12 +3,12 @@
     <div class="formgroup">
         <label class="form-label" for="email">Email Address</label>
         <input type="email" id="email" name="email" class="form-control"
-        [ngModel]="email" (ngModelChange)="email.set($event)">
+        [value]="email()" (input)="email.set($any($event.target).value)">
     </div>
     <div class="form-group">
         <label class="form-label" for="password">Password</label>
         <input type="password" id="password" name="password" class="form-control" 
-        [ngModel]="password" (ngModelChange)="password.set($event)">
+        [value]="password()" (input)="password.set($any($event.target).value)">
     </div>
     
     <!--conditional error message-->

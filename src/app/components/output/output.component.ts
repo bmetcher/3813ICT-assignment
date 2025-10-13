@@ -1,8 +1,11 @@
-import { Component, Input, inject, signal, computed, OnChanges, SimpleChanges } from '@angular/core';
+import { Component, OnInit, Input, inject, effect } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { Channel } from '../../models/channel.model';
+
+import { ContextService } from '../../services/context.service';
+import { MessageService } from '../../services/message.service';
+import { SocketService } from '../../services/socket.service';
 import { UserService } from '../../services/user.service';
-import { User } from '../../models/user.model';
+import { Message } from '../../models/message.model';
 
 @Component({
   selector: 'app-output',
@@ -10,26 +13,51 @@ import { User } from '../../models/user.model';
   templateUrl: './output.component.html',
   styleUrl: './output.component.css'
 })
-export class OutputComponent {
+export class OutputComponent implements OnInit {
+  @Input() channelId!: string;
+  
+  private messageService = inject(MessageService);
+  private socketService = inject(SocketService);
   private userService = inject(UserService);
+  private context = inject(ContextService);
 
-  @Input() channel: Channel | null = null;
-  // Signal holding loaded users
-  private users = signal<User[]>([]);
+  // reactive signals from ContextService
+  messages = this.context.messages;
+  users = this.context.users;
 
-  // Update when channel changes
-  ngOnChanges(changes: SimpleChanges) {
-    if (changes['channel'] && this.channel) {
-      this.userService.getUsersByChannel(this.channel._id)
-        .subscribe(users => this.users.set(users));
-    }
+  ngOnInit(): void {
+    if (!this.channelId) return;
+
+    // Load initial messages
+    this.messageService.getMessages(this.channelId).subscribe(res => {
+      this.context.setMessages(res.messages);
+    });
+
+    // Load users for this channel
+    this.userService.getUsersByChannel(this.channelId).subscribe(users => {
+      this.context.setUsers(users);
+    });
+
+    // Listen for new incoming messages
+    this.socketService.on(`message:${this.channelId}`, (msg: Message) => {
+      this.context.addMessage(msg);
+    });
+
+    // Clean up when switching channels automatically
+    effect(() => {
+      const channel = this.context.currentChannel();
+      if (!channel || channel._id !== this.channelId) {
+        this.context.clearMessages();
+      }
+    });
   }
 
-  // Helper functions for getting user data
-  getUsername(userId: string) {
-    return this.users().find(user => user._id == userId)?.username ?? 'Guest';
+  // Helper to get username from userId
+  getUsername(userId: string): string {
+    return this.context.users().find(user => user._id === userId)?.username || 'Unknown';
   }
-  getUserAvatar(userId: string) {
-    return this.users().find(user => user._id == userId)?.avatar ?? 'assets/default-avatar.png';
+  // Helper to get avatar URL from userId
+  getUserAvatar(userId: string): string {
+    return this.context.users().find(user => user._id === userId)?.avatar || 'assets/default-avatar.png';
   }
 }

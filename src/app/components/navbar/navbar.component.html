@@ -1,17 +1,21 @@
 <div class="d-flex flex-column vh-100 border-end" style="width: 320px;">
     <div class="flex-grow-1 overflow-auto">
-        <ng-container *ngIf="user() && userGroups().length > 0; else noGroups">
+        <ng-container *ngIf="user() && groups().length > 0; else noGroups">
             <!-- Group & Channel List -->
-            <div *ngFor="let group of userGroups()" class="mb-3">
+            <div *ngFor="let group of groups()" class="mb-3">
                 <div class="fw-bold px-2" (click)="context.toggleGroupOpen(group._id)"> 
                     {{ group.name }} 
                 </div>
                 <!--Channels of a Group-->
                 <ul *ngIf="group.open" class="list-unstyled mb-0">
-                    <li *ngFor="let channelId of group.channels" 
-                        class="px-3 py-2 hover bg-light"
-                        (click)="selectChannel(channelId)">
-                        # {{ getChannelName(channelId) }}
+                    <li 
+                        *ngFor="let channel of channels()" 
+                        class="px-3 py-2 hover"
+                        [class.bg-light]="isActive(channel)"
+                        (click)="selectChannel(channel)"
+                        style="cursor: pointer;"
+                    >
+                        # {{ channel.name }}
                     </li>
                 </ul>
             </div>
@@ -26,11 +30,17 @@
     <div class="card flex-shrink-0 mb-1 p-2">
         <div class="d-flex align-items-center justify-content-between p-2">
             <div class="d-flex align-items-center" (click)="openProfile()">
-                <img [src]="user()?.avatar || 'assets/default-avatar.png'"
-                    class="rounded-circle me-2" style="width: 32px; height: 32px;" />
+                <img 
+                    [src]="user()?.avatar || 'assets/default-avatar.png'"
+                    class="rounded-circle me-2" 
+                    style="width: 32px; height: 32px;" 
+                />
                 <span> {{ user()?.username }} </span>
             </div>
-            <button class="btn btn-sm btn-outline-secondary" (click)="openSettings()">
+            <button 
+                class="btn btn-sm btn-outline-secondary" 
+                (click)="openSettings()"
+            >
                 ⚙️
             </button>
         </div>

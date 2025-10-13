@@ -6,7 +6,7 @@ import { Message } from '../models/message.model';
 @Injectable({
   providedIn: 'root'
 })
-export class MessagesService {
+export class MessageService {
   private http = inject(HttpClient);
   private API = `${environment.apiUrl}/messages`;
 

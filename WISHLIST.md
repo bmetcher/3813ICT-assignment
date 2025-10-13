@@ -10,8 +10,10 @@
 ## FIXES/EXTRAS
 * Validate file input
   - (imageUrl) groups.js > PUT
+* (API) messages.js: DELETE
+  - Allow Admin to delete a message too
 
-[X] Membership reference IDs as ObjectId() type
+
 
 * Helper Functions
   - validation: "check group exists" etc.
@@ -22,3 +24,8 @@
   - edit & delete "history" (Undo? show "Edited/Deleted"?)
   
 * New User -> Welcome/Global Group (?)
+
+
+
+[X] Membership reference IDs as ObjectId() type
+  * Actually; all "id" values are now Mongo's ObjectId type

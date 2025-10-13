@@ -1,10 +1,13 @@
-import { Component, Input, inject } from '@angular/core';
-import { ChannelService } from '../../services/channel.service';
-import { AuthService } from '../../services/auth.service';
-import { Channel } from '../../models/channel.model';
+import { Component, Input, inject, effect } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { Users } from '../../dummy-data';
+
+import { Channel } from '../../models/channel.model';
+import { User } from '../../models/user.model';
+import { ContextService } from '../../services/context.service';
+import { ChannelService } from '../../services/channel.service';
+import { AuthService } from '../../services/auth.service';
+import { UserService } from '../../services/user.service';
 
 @Component({
   selector: 'app-details',
@@ -17,46 +20,31 @@ export class DetailsComponent {
 
   private channelService = inject(ChannelService);
   private authService = inject(AuthService);
-  users = Users;
+  private userService = inject(UserService);
+  private context = inject(ContextService);
+
+  users = this.context.users;
+  currentChannel = this.context.currentChannel;
+
+  constructor() {
+    // reload users automatically when currentChannel changes
+    effect(() => {
+      const channel = this.context.currentChannel();
+      if(channel) {
+        this.userService.getUsersByChannel(channel._id).subscribe(users => {
+          this.context.setUsers(users);
+        });
+      } else {
+        this.context.setUsers([]);
+      }
+    });
+  }
 
   // Helper functions for getting user data
   getUsername(userId: string) {
-    return Users.find(user => user.id == userId)?.username ?? 'Guest';
+    return this.context.users().find(user => user._id === userId)?.username || 'Unknown';
   }
   getUserAvatar(userId: string) {
-    return Users.find(user => user.id == userId)?.avatar ?? 'assets/default-avatar.png';
-  }
-
-  isGroupAdmin() {
-    if (!this.channel) return false;
-    const user = this.authService.getCurrentUser();
-    if (!user) return false;
-    return this.channelService.isGroupAdmin(user.id, this.channel.groupId);
-  }
-
-  removeUser(userId: string) {
-    // ask for confirmation
-    const confirmed = window.confirm("Remove user " + this.getUsername(userId) + " from channel?");
-    if (!confirmed) return;
-
-    if (!this.channel) return;
-    this.channel.members = this.channel.members.filter(id => id !== userId);
-    alert("User removed!")
-  }
-  addToChannel() {
-    const username = window.prompt('Enter the username to be added: ');
-    
-    // handle invalid inputs
-    if (!username) return;
-    const addedUser = this.users.find(user => user.username == username);
-    if (!addedUser) {
-      alert("User doesn't exist!");
-      return;
-    };
-
-    if (!this.channel) return;  // typescript was cranky
-    // append user to channel member list
-    this.channel.members = [ ...this.channel?.members, addedUser.id ];
-    alert(addedUser.username + " has been added!");
+    return this.context.users().find(user => user._id === userId)?.avatar || 'assets/default-avatar.png';
   }
 }

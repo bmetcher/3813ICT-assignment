@@ -9,31 +9,34 @@
 <div class="card mb-3 p-3">
     <h5>User Management</h5>
     <hr>
-    <div *ngFor="let user of users" class="d-flex align-items-center justify-content-between mb-2 p-2">
+    <div *ngFor="let user of paginatedUsers()" class="d-flex align-items-center justify-content-between mb-2 p-2">
         <!--Display each user-->
         <div>
             <img [src]="user.avatar" class="rounded-circle me-2" style="width:32px;height:32px;">
+            {{ user.username }}
         </div>
-        <div> {{ user.username }} </div>
-        <div> {{ user.email }} </div>
-
-        <div>
-            <!--Placeholder-->
-        </div>
+        <div> {{ user.email || '-' }} </div>
 
         <div>            
-            <button class="btn btn-sm btn-outline-primary me-1" (click)="addToGroup()"> Add to Group</button>
+            <button class="btn btn-sm btn-outline-primary me-1"> Add to Group</button>
         </div>
         <div>
-            <button class="btn btn-sm btn-outline-danger primary me-1" (click)="removeUser(user)">Remove</button>
+            <button class="btn btn-sm btn-outline-danger primary me-1">Remove</button>
         </div>
+    </div>
+
+    <!-- Pagination -->
+    <div class="d-flex justify-content-between mt-2">
+        <button class="btn btn-sm btn-outline-secondary" (click)="prevPage()">Previous</button>
+        <span>Page {{ currentPageUsers() + 1 }} / {{ totalUserPages() }}</span>
+        <button class="btn btn-sm btn-outline-secondary" (click)="nextPage()">Next</button>
     </div>
     
     <!--New User Form-->
     <div *ngIf="newUserToggle" class="d-flex-column align-items-center mb-3">
         <div class="mb-2">
             <label class="form-label">Username</label>
-            <input class="form-control" [(ngModel)]="newUser.username">
+            <input class="form-control mb-2" [(ngModel)]="newUser.username">
         </div>
         <div class="mb-2">
             <label class="form-label">Email</label>
@@ -44,7 +47,7 @@
             <input class="form-control" [(ngModel)]="newUser.password">
         </div>
     </div>
-    <button class="btn btn-sm btn-success mt-2" style="width:10em;" (click)="createUser()">
+    <button class="btn btn-sm btn-success mt-2" style="width:10em;">
         {{ !newUserToggle? 'New User' : 'Confirm' }}
     </button>
 </div>
@@ -54,26 +57,12 @@
 <div class="card mb-3 p-3">
     <h5>Group Management</h5>
     <hr>
-    <div *ngFor="let group of groups" class="d-flex align-items-center justify-content-between mb-2 p-2">
+    <div *ngFor="let group of groups()" class="d-flex align-items-center justify-content-between mb-2 p-2">
         <!--Display each user-->
         <div> {{ group.name }} </div>
-
         <div>
-            <!--Placeholder-->
-        </div>
-
-        <div>
-            <button class="btn btn-sm btn-outline-danger primary me-1" (click)="removeGroup(group)">Remove</button>
+            <button class="btn btn-sm btn-outline-danger primary me-1">Remove</button>
         </div>
     </div>
-    <div *ngIf="newGroupToggle" class="d-flex-column align-items-center mb-3">
-        <div class="mb-2">
-            <label class="form-label">Group Name</label>
-            <input class="form-control" [(ngModel)]="newGroup.name">
-        </div>
-    </div>
-    <button class="btn btn-sm btn-success mt-2" style="width:10em;" (click)="createGroup()">
-        {{ !newGroupToggle? 'New Group' : 'Confirm' }}
-    </button>
 </div>
 
