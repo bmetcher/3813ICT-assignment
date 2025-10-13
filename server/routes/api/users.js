@@ -1,12 +1,12 @@
 const express = require('express');
 const router = express.Router();
 const bcrypt = require('bcrypt');       // for hashing passwords
-const authenticate = require('../../utilities/authMiddleware');
+const { authenticate } = require('../../utilities/authMiddleware');
 const { getDb } = require('../../mongo');
 const { requireSuper } = require('../../utilities/accessControl');
 const { ObjectId } = require('mongodb');
 
-const { emitUserUpdated, emitUserDeleted } = require('../../sockets');
+const { emitUserUpdated, emitUserDeleted, emitMembershipDeleted } = require('../../sockets');
 
 // CREATE a user
 router.post('/', authenticate, async (req, res) => {
@@ -25,7 +25,8 @@ router.post('/', authenticate, async (req, res) => {
         const userResult = await db.collection('users').insertOne(user);
 
         // return without any password
-        const safeUser = { user, _id: userResult._id, password: _ };
+        const { password: _, ...restUser } = user;  // discard the password specifically
+        const safeUser = { ...restUser, _id: userResult.insertedId };
         res.status(201).json({ createdUser: safeUser, success: true });
     } catch (err) {
         res.status(400).json({ error: err.message });
@@ -80,17 +81,25 @@ router.get('/channel/:channelId', authenticate, async (req, res) => {
         // niche case; return empty list
         if (userIds.length === 0) return res.json({ users: [], success: true });
 
+        
         // find any existing channel bans
+        const now = new Date();
         const bans = await db.collection('bans')
             .find({
                 userId: { $in: userIds },
-                $or: [
-                    { targetId: targetChannelId, targetType: 'channel' },
-                    { targetId: groupId,   targetType: 'group' }
-                ],
-                $or: [
-                    { expiresAt: null },        // permanent
-                    { expiresAt: { $gt: now } } // active
+                $and: [
+                    {
+                        $or: [
+                            { targetId: targetChannelId, targetType: 'channel' },
+                            { targetId: groupId,   targetType: 'group' }
+                        ]
+                    },
+                    {
+                        $or: [
+                            { expiresAt: null },        // permanent
+                            { expiresAt: { $gt: now } } // active
+                        ]
+                    }
                 ]
             })
             .toArray();
@@ -198,8 +207,11 @@ router.delete('/:userId', authenticate, async (req, res) => {
         const targetUser = await db.collection('users').findOne({ _id: targetUserId });
         if (!targetUser) return res.status(404).json({ error: 'User not found' });
         // their memberships
-        const targetMemberships = await db.collection('memberships').findMany({ userId: targetUserId });
-        if (!targetMemberships) return res.status(404).json({ error: 'Memberships not found' });
+        const targetMemberships = await db.collection('memberships').findMany({ userId: targetUserId }).toArray();
+        if (!targetMemberships || targetMemberships.length === 0) {
+            return res.status(404).json({ error: 'Memberships not found' });
+        }
+
         // delete all items
         await db.collection('users').deleteOne({ _id: targetUserId });
         await db.collection('memberships').deleteMany({ userId: targetUserId });

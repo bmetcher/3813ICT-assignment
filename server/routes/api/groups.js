@@ -7,7 +7,6 @@ const { requireAdmin, requireSuper } = require('../../utilities/accessControl');
 
 const { 
     emitGroupUpdated, emitGroupDeleted, 
-    emitChannelDeleted, 
     emitMembershipCreated, emitMembershipUpdated, emitMembershipDeleted,
     emitChannelCreated, emitChannelDeleted
     } = require('../../sockets');
@@ -16,7 +15,7 @@ const {
 router.post('/', authenticate, async (req, res) => {
     try {
         const db = getDb();
-        const { group } = req.body;
+        let { group } = req.body;
         await requireSuper(db, req.userId);
 
         // validate input
@@ -36,7 +35,7 @@ router.post('/', authenticate, async (req, res) => {
             name: group.name,
             imageUrl: req.body.imageUrl || 'public/groupIcons/default.png',
             bannedUsers: [],
-            createdBy: req.userId,
+            createdBy: new ObjectId(req.userId),
             createdAt: new Date()
         }
         // insert group
@@ -49,25 +48,37 @@ router.post('/', authenticate, async (req, res) => {
             name: 'Default',
             description: "Default channel",
             bannedUsers: [],
-            createdBy: req.userId,
+            createdBy: new ObjectId(req.userId),
             createdAt: new Date()
         }
-        const channelResult = await db.collection('channels').insertOne({ defaultChannel });
+        const channelResult = await db.collection('channels').insertOne(defaultChannel);
         // create a membership for the admin
-        const newMembership = {
-            userId: req.userId,
-            groupId,
+        const userObjectId = new ObjectId(req.userId.toString());
+        const membershipData = {
+            userId: userObjectId,
+            groupId: groupId,
             role: 'super',
         }
-        const membershipResult = await db.collection('memberships').insertOne({ newMembership });
+        const membershipResult = await db.collection('memberships').insertOne(membershipData);
+
+        // (debug)
+        console.log('Created membership:', membershipData);
+        console.log('Membership inserted with ID:', membershipResult.insertedId);
+        // verify it was inserted
+        const verifyMembership = await db.collection('memberships').findOne({
+            userId: new ObjectId(req.userId),
+            groupId: groupId
+        });
+        console.log('Verify membership query result:', verifyMembership);
+
         // collect and emit the new objects
-        newChannel = { ...defaultChannel, _id: channelResult.insertedId };
-        newMembership = { ...newMembership, _id: membershipResult.insertedId };
-        emitChannelCreated(newChannel);
-        emitMembershipCreated(newMembership);
+        const createdChannel = { ...defaultChannel, _id: channelResult.insertedId };
+        const createdMembership = { ...membershipData, _id: membershipResult.insertedId };
+        emitChannelCreated(createdChannel);
+        emitMembershipCreated(createdMembership);
 
         // return result
-        res.status(201).json({ ...groupObj, _id: groupId, success: true });
+        res.status(201).json({ createdGroup: { ...newGroup, _id: groupId }, success: true });
     } catch (err) {
         res.status(400).json({ error: err.message });
     }
@@ -86,7 +97,7 @@ router.get('/:userId', authenticate, async (req, res) => {
             .toArray();
 
         // collect the group IDs that are a match
-        const groupIds = memberships.map(mem => ObjectId(mem.groupId));
+        const groupIds = memberships.map(mem => new ObjectId(mem.groupId));
 
         // retrieve all groups using that match (do not return 'banned users' list)
         const groups = await db.collection('groups')
@@ -136,8 +147,8 @@ router.put('/:groupId', authenticate, async (req, res) => {
 router.put('/:groupId/:userId', authenticate, async (req, res) => {
     try {
         const db = getDb();
-        const targetGroup = req.params.groupId;
-        const targetUser = req.params.userId;
+        const targetGroupId = new ObjectId(req.params.groupId);
+        const targetUserId = new ObjectId(req.params.userId);
         const { newRole } = req.body;
         await requireSuper(db, req.userId);
 
@@ -147,19 +158,25 @@ router.put('/:groupId/:userId', authenticate, async (req, res) => {
         }
 
         // find the membership
-        const membership = await db.collection('memberships').findOne({ groupId: targetGroup, userId: targetUser });
+        const membership = await db.collection('memberships').findOne({ 
+            groupId: targetGroupId, 
+            userId: targetUserId 
+        });
         // validate result
         if (!membership) return res.status(404).json({ error: 'Membership not found' });
         if (membership.role === 'super') return res.status(400).json({ error: 'Cannot revoke Super Admin' });
 
         // update the role
         await db.collection('memberships').updateOne(
-            { groupId: targetGroup, userId: targetUser },
+            { groupId: targetGroupId, userId: targetUserId },
             { $set: { role: newRole } }
         );
 
         // emit & return the updated membership
-        const updatedMembership = await db.collection('memberships').findOne({ groupId: targetGroup, userId: targetUser });
+        const updatedMembership = await db.collection('memberships').findOne({ 
+            groupId: targetGroupId, 
+            userId: targetUserId 
+        });
         emitMembershipUpdated(updatedMembership);
         res.json({ updatedMembership, success: true });
     } catch (err) {
@@ -190,13 +207,15 @@ router.put('/:groupId/:userId/invite', authenticate, async (req, res) => {
         if (existingMembership) return res.status(400).json({ error: 'User is already a member' });
 
         // add membership
-        const membership = await db.collection('memberships').insertOne({
+        const membershipData = {
             groupId: targetGroupId,
             userId: targetUserId,
             role: 'user'
-        });
-        emitMembershipCreated(membership);
+        };
 
+        const membershipResult = await db.collection('memberships').insertOne(membershipData);
+        const newMembership = { ...membershipData, _id: membershipResult.insertedId };
+        emitMembershipCreated(newMembership);
         res.json({ success: true });
     } catch (err) {
         res.status(400).json({ error: err.message });
@@ -213,11 +232,11 @@ router.delete('/:groupId', authenticate, async (req, res) => {
         // delete the group
         const targetGroup = await db.collection('groups').findOne({ _id: targetGroupId });
         if (!targetGroup) return res.status(404).json({ error: 'Group not found' });
-        await db.collection('groups').deleteOne({ targetGroup });
+        await db.collection('groups').deleteOne({ _id: targetGroupId });
         
         // find any dependent entries
-        const targetMemberships = await db.collection('memberships').find({ groupId: targetGroupId });
-        const targetChannels = await db.collection('channels').find({ groupId: targetGroupId });
+        const targetMemberships = await db.collection('memberships').find({ groupId: targetGroupId }).toArray();
+        const targetChannels = await db.collection('channels').find({ groupId: targetGroupId }).toArray();
         // delete those too
         await db.collection('memberships').deleteMany({ groupId: targetGroupId });
         await db.collection('channels').deleteMany({ groupId: targetGroupId });
@@ -232,3 +251,5 @@ router.delete('/:groupId', authenticate, async (req, res) => {
         res.status(400).json({ error: err.message });
     }
 });
+
+module.exports = router;

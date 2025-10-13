@@ -2,7 +2,8 @@ const express = require('express');
 const router = express.Router();
 const { ObjectId } = require('mongodb');
 const { getDb } = require('../../mongo');
-const canAccessChannel = require('../../utilities/accessControl');
+const { authenticate } = require('../../utilities/authMiddleware');
+const { canAccessChannel } = require('../../utilities/accessControl');
 
 // sockets.io for emitting message updates to sockets
 const { emitMessageCreated, emitMessageUpdated, emitMessageDeleted } = require('../../sockets');

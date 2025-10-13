@@ -1,5 +1,5 @@
-const { getDb } = require('./mongo');
-const { emitUserUnbanned } = require('./sockets');
+const { getDb } = require('../mongo');
+const { emitUserUnbanned } = require('../sockets');
 
 async function checkExpiredBans() {
     const db = getDb();

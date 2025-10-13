@@ -1,3 +1,4 @@
+require('dotenv').config();         // environment variables
 const express = require('express'); // routing middleware
 const { connect } = require('./mongo');
 const cors = require('cors');
@@ -17,19 +18,19 @@ const PORT = 3000;
 // middleware
 app.use(express.json());    // parse JSON data
 app.use(cors({ origin: 'http://localhost:4200' }))  // allow angular cors
+// CRUD routes
+app.use('/api/login', loginRoutes);
+app.use('/api/users', usersRoutes);
+app.use('/api/groups', groupsRoutes);
+app.use('/api/channels', channelsRoutes);
+app.use('/api/messages', messagesRoutes);
+app.use('/api/bans', bansRoutes);
 
 // Running the server
 async function startServer() {
     try {
         // connect to Mongo
         await connect();    
-        // CRUD routes
-        app.use('/api/login', loginRoutes);
-        app.use('/api/users', usersRoutes);
-        app.use('/api/groups', groupsRoutes);
-        app.use('/api/channels', channelsRoutes);
-        app.use('/api/messages', messagesRoutes);
-        app.use('/api/bans', bansRoutes);
 
         // automatically check to remove expired bans
         setInterval(() => {
@@ -40,9 +41,15 @@ async function startServer() {
         const server = app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
         // sockets.io
         const { initSocket } = require('./sockets');
-        const io = initSocket(server);
+        initSocket(server);
     } catch (err) {
         console.error('Failed to start server', err);
     }
 }
-startServer();
+
+// only start server when run directly (allow testing)
+if (require.main === module) {
+    startServer();
+}
+// export app for testing
+module.exports = app;
