@@ -10,6 +10,9 @@ function initSocket(server) {
 
     // Add auth middleware before connection
     io.use((socket, next) => {
+        // extract token from handshake
+        const token = socket.handshake.auth.token;
+
         if (!token) return next(new Error('No token provided'));
 
         try {
@@ -26,8 +29,15 @@ function initSocket(server) {
         console.log('a user connected: ', socket.id, 'userId:', socket.userId);
 
         // join/leave rooms
-        socket.on('joinChannel', (channelId) => socket.join(channelId));
-        socket.on('leaveChannel', (channelId) => socket.leave(channelId));
+        socket.on('joinChannel', (channelId) => {
+            socket.join(channelId);
+            console.log(`User ${socket.userId} joined channel ${channelId}`);
+        });
+
+        socket.on('leaveChannel', (channelId) => {
+            socket.leave(channelId)
+            console.log(`User ${socket.userId} left ${channelId}`);
+        });
 
         // disconnect
         socket.on('disconnect', () => {

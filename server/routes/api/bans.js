@@ -22,7 +22,7 @@ function createBanRoute() {
             const targetGroupId = new ObjectId(req.params.groupId);
             const targetChannelId = req.params.channelId ? new ObjectId(req.params.channelId) : null;
 
-            await requireAdmin(db, req.userId, req.params.groupId);
+            await requireAdmin(db, req.userId, targetGroupId);
 
             // validate duration
             if (!duration) return res.status(400).json({ error: 'Duration is required' });

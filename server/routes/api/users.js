@@ -135,8 +135,17 @@ router.put('/:userId', authenticate, async (req, res) => {
         const db = getDb();
         const targetUserId = new ObjectId(req.params.userId);
 
-        // check permission
-        if (req.userId !== req.params.userId) return res.status(403).json({ error: 'Forbidden' });
+        // check it's the user updating it themselves
+        const isSelf = req.userId === req.params.userId;
+        if (!isSelf) {
+            // if not: is it the super admin?
+            const membership = await db.collection('memberships').findOne({
+                userId: new ObjectId(req.userId)
+            });
+            if (!membership || membership.role !== 'super') {
+                return res.status(403).json({ error: 'Forbidden' });
+            }
+        }
 
         // update allowed fields (filter them)
         const { username, avatar, status, email, dob } = req.body;
@@ -173,7 +182,18 @@ router.put('/:userId/password', authenticate, async (req, res) => {
         // verify the user
         const user = await db.collection('users').findOne({ _id: targetUserId });
         if (!user) return res.status(404).json({ error: 'User not found' });
-        if (req.userId !== req.params.userId) return res.status(403).json({ error: 'Forbidden' });
+
+        // check it's the user updating it themselves
+        const isSelf = req.userId === req.params.userId;
+        if (!isSelf) {
+            // if not: is it the super admin?
+            const membership = await db.collection('memberships').findOne({
+                userId: new ObjectId(req.userId)
+            });
+            if (!membership || membership.role !== 'super') {
+                return res.status(403).json({ error: 'Forbidden' });
+            }
+        }
 
         const { oldPassword, newPassword } = req.body;
         // verify the current/previous password
@@ -197,7 +217,6 @@ router.delete('/:userId', authenticate, async (req, res) => {
     try {
         const db = getDb();
         const targetUserId = new ObjectId(req.params.userId);
-        await requireSuper(db, req.userId);
 
         // find the group of the user we want to delete
         const membership = await db.collection('memberships').findOne({ userId: targetUserId });
@@ -207,17 +226,19 @@ router.delete('/:userId', authenticate, async (req, res) => {
         const targetUser = await db.collection('users').findOne({ _id: targetUserId });
         if (!targetUser) return res.status(404).json({ error: 'User not found' });
         // their memberships
-        const targetMemberships = await db.collection('memberships').findMany({ userId: targetUserId }).toArray();
+        const targetMemberships = await db.collection('memberships').find({ userId: targetUserId }).toArray();
         if (!targetMemberships || targetMemberships.length === 0) {
             return res.status(404).json({ error: 'Memberships not found' });
         }
+
+        await requireSuper(db, req.userId);
 
         // delete all items
         await db.collection('users').deleteOne({ _id: targetUserId });
         await db.collection('memberships').deleteMany({ userId: targetUserId });
         // emit to room/s
         emitUserDeleted(targetUser);
-        targetMemberships.forEach(member => emitMembershipDeleted(member));
+        targetMemberships.forEach(membership => emitMembershipDeleted(membership));
 
         res.json({ deletedUser: targetUser, success: true });
     } catch (err) {

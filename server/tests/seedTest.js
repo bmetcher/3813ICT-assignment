@@ -9,7 +9,7 @@ const jwt = require('jsonwebtoken');
 const { ObjectId } = require('mongodb');
 
 const SUPER_USER_ID = new ObjectId('68eb82a141b296915cdb8b60');
-const SUPER_GROUPD_ID = new ObjectId('68eb86131c640a9dcb4e9dd7');
+const SUPER_GROUP_ID = new ObjectId('68eb86131c640a9dcb4e9dd7');
 const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key';
 
 let db;
@@ -178,7 +178,7 @@ async function updateChannel(channelId, updates) {
 
 async function deleteChannel(channelId) {
     const res = await request(app)
-        .get(`/api/channels/${channelId}`)
+        .delete(`/api/channels/${channelId}`)
         .set('Authorization', `Bearer ${token}`);
     return res;
 }
@@ -224,20 +224,20 @@ async function deleteMessage(channelId, messageId) {
 
 
 // ## Ban Helpers ##
-async function banUserFromGroup(groupId, userId, reason = 'Test ban') {
+async function banUserFromGroup(groupId, userId, reason = 'Test ban', duration = -1) {
     const res = await request(app)
         .post(`/api/bans/group/${groupId}/user/${userId}`)
-        .send({ reason })
+        .send({ reason, duration })
         .set('Authorization', `Bearer ${token}`);
 
     if (res.body.createdBan) banIds.push(res.body.createdBan._id);
     return res;
 }
 
-async function banUserFromChannel(groupId, channelId, userId, reason = 'Test ban') {
+async function banUserFromChannel(groupId, channelId, userId, reason = 'Test ban', duration = -1) {
     const res = await request(app)
         .post(`/api/bans/group/${groupId}/channel/${channelId}/user/${userId}`)
-        .send({ reason })
+        .send({ reason, duration })
         .set('Authorization', `Bearer ${token}`);
 
     if (res.body.createdBan) banIds.push(res.body.createdBan._id);
@@ -293,12 +293,12 @@ describe('Comprehensive CRUD Operation Testing', function () {
         console.log('All collections cleared');
 
         console.log('\n #### Creating Super Admin ####');
-        // Create super admin user
-        const hashedPassword = await bcrsypt.hash('superpassword', 10);
+        // Create super admin user  (spec. says:  User = 'super' && Password = '123')
+        const hashedPassword = await bcrsypt.hash('123', 10);
         await db.collection('users').insertOne({
             _id: SUPER_USER_ID,
             email: 'super@admin.com',
-            username: 'Super',
+            username: 'super',
             password: hashedPassword,
             avatar: 'public/avatars/default.png',
             status: 'online',
@@ -308,7 +308,7 @@ describe('Comprehensive CRUD Operation Testing', function () {
 
         // Create super group
         await db.collection('groups').insertOne({
-            _id: SUPER_GROUPD_ID,
+            _id: SUPER_GROUP_ID,
             name: 'Super Group',
             imageUrl: 'public/groupIcons/default.png',
             bannedUsers: [],
@@ -320,7 +320,7 @@ describe('Comprehensive CRUD Operation Testing', function () {
         // Create super admin membership
         await db.collection('memberships').insertOne({
             userId: SUPER_USER_ID,
-            groupId: SUPER_GROUPD_ID,
+            groupId: SUPER_GROUP_ID,
             role: 'super'
         });
         console.log('Super admin membership created');
@@ -329,7 +329,7 @@ describe('Comprehensive CRUD Operation Testing', function () {
         // verify token works by attempting login
         const login = await request(app)
             .post('/api/login')
-            .send({ email: 'super@admin.com', password: 'superpassword' });
+            .send({ email: 'super@admin.com', password: '123' });
 
         console.log('Login response:', login.status);
         
@@ -364,7 +364,7 @@ describe('Comprehensive CRUD Operation Testing', function () {
         });
 
         it('should update user password', async () => {
-            const res = await updatePassword(userIds[1], '123456', 'newpassword123');
+            const res = await updatePassword(userIds[2], '123456', 'newpassword123');
             expect(res.status).to.equal(200);
             console.log('Updated user password');
         });
@@ -394,7 +394,7 @@ describe('Comprehensive CRUD Operation Testing', function () {
 
         it('should update group details', async () => {
             const res = await updateGroup(groupIds[0], {
-                name: 'Dev Team Updated',
+                name: 'Staff Group Updated',
                 imageUrl: 'public/groupIcons/dev.png'
             });
 
@@ -487,7 +487,7 @@ describe('Comprehensive CRUD Operation Testing', function () {
         it('should create messages', async () => {
             await createMessage(channelIds[0], userIds[1], 'Hello everyone!');
             await createMessage(channelIds[0], userIds[2], 'How is everyone doing?');
-            await createMessage(channelIds[2], userIds[3], 'This is a test message');
+            await createMessage(channelIds[0], userIds[3], 'This is a test message');
 
             expect(messageIds.length).to.equal(3);
             console.log('Created 3 messages');
@@ -525,13 +525,13 @@ describe('Comprehensive CRUD Operation Testing', function () {
     // ## Ban Tests ##
     describe('Ban CRUD Operations', () => {
         it('should ban user from group', async () => {
-            const res = await banUserFromGroup(groupIds[0], userIds[2], 'Violated rules');
+            const res = await banUserFromGroup(groupIds[0], userIds[2], 'Violated rules', -1);
             expect(res.status).to.equal(201);
             console.log('Banned user from group');
         });
 
         it('should ban user from channel', async () => {
-            const res = await banUserFromChannel(groupIds[0], channelIds[0], userIds[1], 'Spam');
+            const res = await banUserFromChannel(groupIds[0], channelIds[0], userIds[1], 'Spam', 3600);
             expect(res.status).to.equal(201);
             console.log('Banned user from channel');
         });
@@ -540,6 +540,7 @@ describe('Comprehensive CRUD Operation Testing', function () {
             const res = await getActiveBansForGroup(groupIds[0]);
             expect(res.status).to.equal(200);
             expect(res.body.bans).to.be.an('array');
+            expect(res.body.bans.length).to.be.at.least(1);
             console.log(`Retrieved ${res.body.bans.length} active bans`);
         });
 
@@ -547,14 +548,21 @@ describe('Comprehensive CRUD Operation Testing', function () {
             const res = await getAllBansForGroup(groupIds[0]);
             expect(res.status).to.equal(200);
             expect(res.body.bans).to.be.an('array');
+            expect(res.body.bans.length).to.be.at.least(1);
             console.log(`Retrieved ${res.body.bans.length} total bans`);
         });
 
         it('should update ban reason', async () => {
             if (banIds.length > 0) {
-                const res = await updateBan(banIds[0], { reason: 'Updated reason' });
+                const res = await updateBan(banIds[0], { 
+                    reason: 'Updated reason',
+                    duration: -1    // stays permanent
+                });
                 expect(res.status).to.equal(200);
                 console.log('Updated ban reason');
+            } else {
+                console.log('No bans to update; skipping');
+                return;
             }
         });
 
@@ -563,14 +571,35 @@ describe('Comprehensive CRUD Operation Testing', function () {
                 const res = await deleteBan(banIds[0]);
                 expect(res.status).to.equal(200);
                 console.log('Deleted ban');
+            } else {
+                console.log('No bans to delete; skipping');
+                return;
             }
         });
     });
 
-    // ## Delete Post-Tests ##
+    // ## Delete Tests ##
     describe('Delete Operations', () => {
         it('should delete a user', async () => {
             const res = await deleteUser(userIds[3]);
+
+            if (res.status !== 200) {
+                console.log('Delete user failed with status:', res.status);
+                console.log('Error response:', res.body);
+
+                // check if user exists in db
+                const userCheck = await db.collection('users').findOne({
+                    _id: new ObjectId(userIds[2])
+                });
+                console.log('User exists in DB:', !!userCheck);
+
+                // check user's memberships
+                const memberships = await db.collection('memberships').find({
+                    userId: new ObjectId(userIds[3])
+                }).toArray();
+                console.log('User has', memberships.length, 'memberships');
+            }
+
             expect(res.status).to.equal(200);
             console.log('Deleted user');
         });
