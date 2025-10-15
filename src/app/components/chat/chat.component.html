@@ -1,12 +1,16 @@
 <div class="d-flex vh-100 w-100">
     <div class="flex-grow-1 d-flex flex-column me-3">
         <!--Chat Display-->
-        <app-output class="flex-grow-1 overflow-auto"></app-output>
+        <app-output class="flex-grow-1 overflow-auto" [channelId]="currentChannel()?._id || ''">
+        </app-output>
+        
+
         <!--Chat Input-->
         <div class="card p-2 mt-2">
-            <app-input></app-input>
+            <app-input (messageSubmit)="onMessageSubmit($event)"></app-input>
         </div>
     </div>
+    
     <!--Details pane-->
     <div class="border-start" style="width: 12em;">
         <app-details></app-details>

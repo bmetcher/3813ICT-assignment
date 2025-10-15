@@ -1,14 +1,20 @@
-import { Injectable, signal, computed } from '@angular/core';
+import { Injectable, signal, computed, inject } from '@angular/core';
 import { Group } from '../models/group.model';
 import { Channel } from '../models/channel.model';
 import { User } from '../models/user.model';
 import { Message } from '../models/message.model';
 import { Membership } from '../models/membership.model';
+import { GroupService } from './group.service';
+import { ChannelService } from './channel.service';
+import { firstValueFrom } from 'rxjs';
 
 @Injectable({
   providedIn: 'root'
 })
 export class ContextService {
+  private groupService = inject(GroupService);
+  private channelService = inject(ChannelService);
+
   // # Groups #
   private _groups = signal<Group[]>([]);
   readonly groups = computed(() => this._groups());
@@ -79,5 +85,44 @@ export class ContextService {
   }
   clearMessages() {
     this._messages.set([]);
+  }
+
+  // load all user context (groups & channels)
+  async loadUserContext(userId: string): Promise<void> {
+    try {
+      console.log('Loading context for user:', userId);
+      // load groups
+      const groupsData = await firstValueFrom(
+        this.groupService.getGroups(userId)
+      );
+
+      // set any found groups
+      if (groupsData?.groups && groupsData.groups.length > 0) {
+        console.log('Loaded groups:', groupsData.groups.length);
+        this.setGroups(groupsData.groups);
+
+        // load channels for all groups
+        const allChannels: Channel[] = [];
+        for (const group of groupsData.groups) {
+          const channelsData = await firstValueFrom(
+            this.channelService.getChannelsByGroup(group._id)
+          );
+          
+          if (channelsData?.channels) {
+            allChannels.push(...channelsData.channels);
+          }
+        }
+
+        console.log('Loaded channels:', allChannels.length);
+        this.setChannels(allChannels);
+      } else {
+        console.warn('No groups returned');
+        this.setGroups([]);
+        this.setChannels([]);
+      }
+    } catch (err) {
+      console.error('Error loading user context:', err);
+      throw err;
+    }
   }
 }

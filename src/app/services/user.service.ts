@@ -1,6 +1,6 @@
 import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { Observable } from 'rxjs';
+import { Observable, map } from 'rxjs';
 import { environment } from '../../environments/environment';
 import { User } from '../models/user.model';
 
@@ -20,38 +20,38 @@ export class UserService {
 
   // Update user data
   updateUser(userId: string, data: Partial<User>): Observable<User> {
-    return this.http.put<User>(
+    return this.http.put<{ updatedUser: User, success: boolean }>(
       `${this.API}/users/${userId}`,
       data
-    );
+    ).pipe(map(res => res.updatedUser));
   }
 
   // Update user password
-  updatePassword(userId: string, oldPassword: string, newPassword: string) {
-    return this.http.put(
+  updatePassword(userId: string, oldPassword: string, newPassword: string): Observable<{ success: boolean }> {
+    return this.http.put<{ success: boolean }>(
       `${this.API}/users/${userId}/password`,
       { oldPassword, newPassword }
     );
   }
 
   // Delete user
-  deleteUser(userId: string): Observable<any> {
-    return this.http.delete(
+  deleteUser(userId: string): Observable<{ deletedUser: User, success: boolean }> {
+    return this.http.delete<{ deletedUser: User, success: boolean }>(
       `${this.API}/users/${userId}`
     );
   }
 
   // Get all users in a group
   getUsersByGroup(groupId: string): Observable<User[]> {
-    return this.http.get<User[]>(
+    return this.http.get<{ users: User[], success: boolean }>(
       `${this.API}/users/group/${groupId}`
-    );
+    ).pipe(map(res => res.users));
   }
 
   // Get all users in a channel
   getUsersByChannel(channelId: string): Observable<User[]> {
-    return this.http.get<User[]>(
+    return this.http.get<{ users: User[], success: boolean }>(
       `${this.API}/users/channel/${channelId}`
-    );
+    ).pipe(map(res => res.users));
   }
 }

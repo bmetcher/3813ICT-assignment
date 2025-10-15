@@ -1,22 +1,42 @@
 <div class="p-3 d-flex flex-column h-100">
     <!--Channel Info-->
     <div class="mb-3 border-bottom pb-2">
-        <h5> {{ currentChannel.name || 'No Channel' }} </h5>
+        <h5> {{ currentChannel()?.name || 'No Channel' }} </h5>
+        <small class="text-muted" *ngIf="currentChannel()?.description">
+            {{ currentChannel()?.description }}
+        </small>
     </div>
 
     <!--Members List-->
     <div *ngIf="currentChannel()" class="flex-grow-1 overflow-auto">
         <div class="d-flex align-items-center mb-4">
-            <h6 class="flex-grow-1 m-2">Users</h6>
+            <h6 class="flex-grow-1 m-2">Users ({{ users().length }})</h6>
         </div>
         
-        <ul class="list-unstyled">
+        <ul class="list-unstyled" *ngIf="users().length > 0; else noUsers">
             <li *ngFor="let user of users()">
                 <div class="d-flex align-items-center mb-2">
-                    <img [src]="user.avatar || 'assets/default-avatar.png'" class="rounded-circle me-2" style="width:24px;height:24px;">
-                    <span class="flex-grow-1"> {{ user.username }} </span>
+                    <img 
+                        [src]="user.avatar || 'assets/default-avatar.png'" 
+                        class="rounded-circle me-2" 
+                        style="width:24px;height:24px;"
+                        [alt]="user.username + 'avatar'"
+                    >
+                    <span class="flex-grow-1">{{ user.username }}</span>
+                    <!-- <span class="badge bg-secondary" *ngIf="user.role">
+                        {{ user.role }}
+                    </span> -->
                 </div>
             </li>
         </ul>
+
+        <ng-template #noUsers>
+            <p class="text-muted">No members to display</p>
+        </ng-template>
+    </div>
+
+    <!-- No channel selected -->
+    <div *ngIf="!currentChannel()" class="text-muted text-center mt-5">
+        <p>Select a channel to view details</p>
     </div>
 </div>

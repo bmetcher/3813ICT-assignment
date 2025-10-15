@@ -33,7 +33,7 @@ export class AuthService {
 
   // Login: send credentials to backend -> store token and userId
   login(email: string, password: string) {
-    return this.http.post<{ token: string; userId: string }>(`${this.API}/auth/login`, { email, password })
+    return this.http.post<{ token: string; userId: string }>(`${this.API}/login`, { email, password })
       .pipe(tap(res => {
         localStorage.setItem(this.tokenKey, res.token);
         localStorage.setItem(this.userIdKey, res.userId);

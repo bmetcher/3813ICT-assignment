@@ -1,4 +1,4 @@
-import { Component, inject, computed } from '@angular/core';
+import { Component, inject, computed, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
 import { AuthService } from '../../services/auth.service';
@@ -11,7 +11,7 @@ import { Channel } from '../../models/channel.model';
   templateUrl: './navbar.component.html',
   styleUrl: './navbar.component.css'
 })
-export class NavbarComponent {
+export class NavbarComponent implements OnInit {
   private router = inject(Router);
   private authService = inject(AuthService);
   readonly context = inject(ContextService);
@@ -20,6 +20,14 @@ export class NavbarComponent {
   groups = this.context.groups;
   channels = this.context.channels;
   currentChannel = this.context.currentChannel;
+
+  // debugging
+  ngOnInit() {
+    console.log('# Navbar Initialized #');
+    console.log(' User:', this.user());
+    console.log(' Groups:', this.groups());
+    console.log(' Channels:', this.channels());
+  }
 
   // Click event for Settings page
   openSettings() {
@@ -40,5 +48,10 @@ export class NavbarComponent {
   // For showing currentChannel in UI
   isActive(channel: Channel) {
     return this.currentChannel()?. _id === channel._id;
+  }
+
+  // Helper to toggle a group open/closed
+  toggleGroup(groupId: string) {
+    this.context.toggleGroupOpen(groupId);
   }
 }

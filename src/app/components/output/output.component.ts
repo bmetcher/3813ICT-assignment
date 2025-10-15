@@ -1,4 +1,4 @@
-import { Component, OnInit, Input, inject, effect } from '@angular/core';
+import { Component, OnInit, OnDestroy, Input, inject, effect } from '@angular/core';
 import { CommonModule } from '@angular/common';
 
 import { ContextService } from '../../services/context.service';
@@ -25,31 +25,70 @@ export class OutputComponent implements OnInit {
   messages = this.context.messages;
   users = this.context.users;
 
-  ngOnInit(): void {
-    if (!this.channelId) return;
-
-    // Load initial messages
-    this.messageService.getMessages(this.channelId).subscribe(res => {
-      this.context.setMessages(res.messages);
-    });
-
-    // Load users for this channel
-    this.userService.getUsersByChannel(this.channelId).subscribe(users => {
-      this.context.setUsers(users);
-    });
-
-    // Listen for new incoming messages
-    this.socketService.on(`message:${this.channelId}`, (msg: Message) => {
-      this.context.addMessage(msg);
-    });
-
-    // Clean up when switching channels automatically
+  
+  constructor() {
+    // watch for channel changes and reload data
     effect(() => {
       const channel = this.context.currentChannel();
-      if (!channel || channel._id !== this.channelId) {
+      if (channel) {
+        this.loadChannelData(channel._id);
+      } else {
         this.context.clearMessages();
+        this.context.setUsers([]);
       }
     });
+  }
+
+  ngOnInit(): void {
+    // set up socket listeners
+    this.socketService.on('messageCreated', (msg: Message) => {
+      // only add if it's for the current channel
+      if (msg.channelId === this.channelId) {
+        this.context.addMessage(msg);
+      }
+    });
+
+    this.socketService.on('messageUpdated', (msg: Message) => {
+      if (msg.channelId === this.channelId) {
+        const messages = this.context.messages();
+        const updated = messages.map(m => m._id === msg._id ? msg : m);
+        this.context.setMessages(updated);
+      }
+    });
+
+    this.socketService.on('messageDeleted', (msg: Message) => {
+      if (msg.channelId === this.channelId) {
+        this.context.removeMessage(msg._id);
+      }
+    });
+  }
+
+  ngOnDestroy(): void {
+    // clean up listeners
+    this.socketService.socket?.off('messageCreated');
+    this.socketService.socket?.off('messageUpdated');
+    this.socketService.socket?.off('messageDeleted');
+  }
+
+  private loadChannelData(channelId: string): void {
+    // load messages
+    this.messageService.getMessages(channelId).subscribe({
+      next: (res) => {
+        this.context.setMessages(res.messages);
+      },
+      error: (err) => console.error('Failed to load messages:', err)
+    });
+
+    // load users
+    this.userService.getUsersByChannel(channelId).subscribe({
+      next: (users) => {
+        this.context.setUsers(users);
+      },
+      error: (err) => console.error('Failed to load users:', err)
+    });
+
+    // join the socket room for this channel
+    this.socketService.emit('joinChannel', channelId);
   }
 
   // Helper to get username from userId
