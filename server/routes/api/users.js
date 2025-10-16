@@ -64,34 +64,44 @@ router.post('/:userId/avatar', authenticate, uploadAvatar.single('avatar'), asyn
         }
         
         // build avatar path for database (relative path)
-        const avatarPath = `public/avatars/${req.file.filename}`;
-        console.log('Saving avatar path to database:', avatarPath);
+        const newAvatarPath = `public/avatars/${req.file.filename}`;
+        console.log('Saving avatar path to database:', newAvatarPath);
 
         // get user's old avatar to delete it
         const user = await db.collection('users').findOne({ _id: targetUserId });
-        if (user && user.avatar && user.avatar !== 'public/avatars/default.png') {
-            // delete old avatar file
-            const oldPath = path.join(__dirname, '../../', user.avatar);
-            console.log('Checking for old avatar:', oldPath);
+        const oldAvatarPath = user?.avatar;
 
-            // check if file exists before trying to delete it
-            if (fs.existsSync(oldPath)) {
-                try {
-                    fs.unlinkSync(oldPath);
-                    console.log('Deleted old avatar:', oldPath);
-                } catch (err) {
-                    console.error('Failed to delete old avatar:', err);
-                }
-            } else {
-                console.log('Old avatar file does not exist, skipping delete');
-            }
-        }
+        console.log('Old avatar path from db:', oldAvatarPath);
+        console.log('New avatar path:', newAvatarPath);
 
-        // update user document with new avatar path
+        // update database with new avatar
         await db.collection('users').updateOne(
             { _id: targetUserId },
-            { $set: { avatar: avatarPath } }
+            { $set: { avatar: newAvatarPath } }
         );
+
+        // delete old file if it's different from the new one
+        if (oldAvatarPath && 
+            oldAvatarPath !== 'public/avatars/default.png' && 
+            oldAvatarPath !== newAvatarPath) {
+            // delete old avatar file
+            const oldFilePath = path.join(__dirname, '../../', oldAvatarPath);
+            console.log('Checking for old avatar:', oldFilePath);
+
+            // check if file exists before trying to delete it
+            if (fs.existsSync(oldFilePath)) {
+                try {
+                    fs.unlinkSync(oldFilePath);
+                    console.log('Deleted old avatar:', oldFilePath);
+                } catch (err) {
+                    console.error('Failed to delete old avatar:', err.message);
+                }
+            } else {
+                console.log('Old avatar file not found');
+            }
+        } else {
+            console.log('No old avatar to delete (same file or default)');
+        }
 
         // fetch updated user (exclude password)
         const updatedUser = await db.collection('users').findOne(
@@ -107,16 +117,25 @@ router.post('/:userId/avatar', authenticate, uploadAvatar.single('avatar'), asyn
 
         res.json({
             user: updatedUser,
-            avatarUrl: avatarPath,
+            avatarUrl: newAvatarPath,
             success: true
         });
     } catch (err) {
         console.error('Avatar upload error:', err);
+
         // delete file if error occurs
-        if (req.file) {
-            fs.unlinkSync(req.file.path);
+        if (req.file && fs.existsSync(req.file.path)) {
+            try {
+                fs.unlinkSync(req.file.path);
+                console.log('Cleaned up uploaded file');
+            } catch (cleanupErr) {
+                console.error('Failed to clean up:', cleanupErr.message);
+            }
         }
-        res.status(400).json({ error: err.message });
+        res.status(500).json({ 
+            error: err.message,
+            details: 'Check server console for details'
+        });
     }
 });
 

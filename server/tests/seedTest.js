@@ -5,12 +5,10 @@ const request = require('supertest');
 const { connect, getDb } = require('../mongo');
 const app = require('../server');
 const bcrypt = require('bcrypt');
-const jwt = require('jsonwebtoken');
 const { ObjectId } = require('mongodb');
 
 const SUPER_USER_ID = new ObjectId('68eb82a141b296915cdb8b60');
 const SUPER_GROUP_ID = new ObjectId('68eb86131c640a9dcb4e9dd7');
-const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key';
 
 let db;
 let token;

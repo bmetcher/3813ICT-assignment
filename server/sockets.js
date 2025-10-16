@@ -173,11 +173,12 @@ async function emitChannelDeleted(channel) {
     }
 }
 
-// USERS    (only super creates user; no emit (yet))
+// USERS
 async function emitUserUpdated(user) {
     if (!io) throw new Error('Socket.IO not initialized');
     try { 
-        io.to(user.groupId.toString()).emit('userUpdated', user);
+        io.emit('userUpdated', user);
+        console.log('[SOCKET] User updated broadcasted to all clients');
     } catch (err) {
         console.error('[SOCKET] emitUserUpdated error:', err);
     }
@@ -185,7 +186,8 @@ async function emitUserUpdated(user) {
 async function emitUserDeleted(user) {
     if (!io) throw new Error('Socket.IO not initialized');
     try {
-        io.to(user.groupId.toString()).emit('userDeleted', user);
+        io.emit('userDeleted', user);
+        console.log('[SOCKET] User deleted broadcasted to all clients');
     } catch (err) {
         console.error('[SOCKET] emitUserDeleted error:', err);
     }
