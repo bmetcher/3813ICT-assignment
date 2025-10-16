@@ -4,7 +4,7 @@ const expect = chai.expect;
 const request = require('supertest');
 const { connect, getDb } = require('../mongo');
 const app = require('../server');
-const bcrsypt = require('bcrypt');
+const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 const { ObjectId } = require('mongodb');
 
@@ -260,7 +260,7 @@ async function getAllBansForGroup(groupId) {
 
 async function updateBan(banId, updates) {
     const res = await request(app)
-        .get(`/api/bans/${banId}`)
+        .put(`/api/bans/${banId}`)
         .send(updates)
         .set('Authorization', `Bearer ${token}`);
     return res;
@@ -268,7 +268,7 @@ async function updateBan(banId, updates) {
 
 async function deleteBan(banId) {
     const res = await request(app)
-        .get(`/api/bans/${banId}`)
+        .delete(`/api/bans/${banId}`)
         .set('Authorization', `Bearer ${token}`);
     return res;
 }
@@ -294,7 +294,7 @@ describe('Comprehensive CRUD Operation Testing', function () {
 
         console.log('\n #### Creating Super Admin ####');
         // Create super admin user  (spec. says:  User = 'super' && Password = '123')
-        const hashedPassword = await bcrsypt.hash('123', 10);
+        const hashedPassword = await bcrypt.hash('123', 10);
         await db.collection('users').insertOne({
             _id: SUPER_USER_ID,
             email: 'super@admin.com',
@@ -485,9 +485,9 @@ describe('Comprehensive CRUD Operation Testing', function () {
     // ## Message Tests ##
     describe('Message CRUD Operations', () => {
         it('should create messages', async () => {
-            await createMessage(channelIds[0], userIds[1], 'Hello everyone!');
-            await createMessage(channelIds[0], userIds[2], 'How is everyone doing?');
-            await createMessage(channelIds[0], userIds[3], 'This is a test message');
+            await createMessage(channelIds[0], 'Hello everyone!');
+            await createMessage(channelIds[0], 'How is everyone doing?');
+            await createMessage(channelIds[0], 'This is a test message');
 
             expect(messageIds.length).to.equal(3);
             console.log('Created 3 messages');

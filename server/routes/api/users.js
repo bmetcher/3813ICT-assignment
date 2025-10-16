@@ -33,6 +33,26 @@ router.post('/', authenticate, async (req, res) => {
     }
 });
 
+// GET a single user by ID
+router.get('/:userId', authenticate, async (req, res) => {
+    try {
+        const db = getDb();
+        const targetUserId = new ObjectId(req.params.userId);
+
+        // fetch user
+        const user = await db.collection('users').findOne(
+            { _id: targetUserId },
+            { projection: { password: 0 } }
+        );
+
+        if (!user) return res.status(404).json({ error: 'User not found' });
+
+        res.json({ user, success: true });
+    } catch (err) {
+        res.status(400).json({ error: err.message });
+    }
+});
+
 // GET users belonging to a given group ID
 router.get('/group/:groupId', authenticate, async (req, res) => {
     try {
@@ -60,7 +80,6 @@ router.get('/group/:groupId', authenticate, async (req, res) => {
     }
 });
 
-// * could probably handle this better..
 // GET users belonging to a given channel ID (attach their roles)
 router.get('/channel/:channelId', authenticate, async (req, res) => {
     try {
@@ -81,25 +100,18 @@ router.get('/channel/:channelId', authenticate, async (req, res) => {
         // niche case; return empty list
         if (userIds.length === 0) return res.json({ users: [], success: true });
 
-        
         // find any existing channel bans
         const now = new Date();
         const bans = await db.collection('bans')
             .find({
                 userId: { $in: userIds },
-                $and: [
-                    {
-                        $or: [
-                            { targetId: targetChannelId, targetType: 'channel' },
-                            { targetId: groupId,   targetType: 'group' }
-                        ]
-                    },
-                    {
-                        $or: [
-                            { expiresAt: null },        // permanent
-                            { expiresAt: { $gt: now } } // active
-                        ]
-                    }
+                $or: [
+                    { channelId: targetChannelId },
+                    { groupId: groupId, channelId: null }   // remember: group bans have null channelId
+                ],
+                $or: [
+                    { expiresAt: null },        // permanent
+                    { expiresAt: { $gt: now } } // active
                 ]
             })
             .toArray();

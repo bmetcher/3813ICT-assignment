@@ -25,6 +25,8 @@ app.use('/api/groups', groupsRoutes);
 app.use('/api/channels', channelsRoutes);
 app.use('/api/messages', messagesRoutes);
 app.use('/api/bans', bansRoutes);
+// serve the public folder (assets stored here)
+app.use('/public', express.static('public'));
 
 // Running the server
 async function startServer() {
