@@ -4,22 +4,22 @@
             <!-- Group & Channel List -->
             <div *ngFor="let group of groups()" class="mb-3">
                 <div class="fw-bold px-2" (click)="toggleGroup(group._id)" style="cursor: pointer;"> 
-                    {{ group.open ? '▼' : '▶' }} {{ group.name }}
+                    {{ group.open ? 'V' : '>' }} {{ group.name }}
                 </div>
 
                 <!--Channels of a Group-->
                 <ul *ngIf="group.open" class="list-unstyled mb-0">
-                    <li 
-                        *ngFor="let channel of channels()"
-                        class="px-3 py-2 hover"
-                        [class.bg-light]="isActive(channel)"
-                        (click)="selectChannel(channel)"
-                        style="cursor: pointer;"
-                    >
-                        <ng-container *ngIf="channel.groupId === group._id" >
+                    <ng-container *ngFor="let channel of channels()">
+                        <li 
+                            *ngIf="channel.groupId === group._id"
+                            class="px-3 py-2 hover"
+                            [class.bg-light]="isActive(channel)"
+                            (click)="selectChannel(channel)"
+                            style="cursor: pointer;"
+                        >
                             # {{ channel.name }}
-                        </ng-container>
-                    </li>
+                        </li>
+                    </ng-container>
                 </ul>
             </div>
         </ng-container>
@@ -34,8 +34,8 @@
         <div class="d-flex align-items-center justify-content-between p-2">
             <div class="d-flex align-items-center" (click)="openProfile()" style="cursor: pointer;">
                 <img 
-                    [src]="user()?.avatar || 'assets/default-avatar.png'"
-                    class="rounded-circle me-2" 
+                    [src]="utility.getAvatarUrl(user()?.avatar)"
+                    class="rounded-circle me-2"
                     style="width: 32px; height: 32px;" 
                 />
                 <span> {{ user()?.username || user()?.email }} </span>

@@ -17,8 +17,8 @@
             <li *ngFor="let user of users()">
                 <div class="d-flex align-items-center mb-2">
                     <img 
-                        [src]="user.avatar || 'assets/default-avatar.png'" 
-                        class="rounded-circle me-2" 
+                        [src]="utility.getAvatarUrl(user.avatar)" 
+                        class="rounded-circle me-2"
                         style="width:24px;height:24px;"
                         [alt]="user.username + 'avatar'"
                     >

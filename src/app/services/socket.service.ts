@@ -26,14 +26,21 @@ export class SocketService {
     }
 
     // create socket connection
-    this.socket = io(environment.apiUrl, {
+    const socketUrl = environment.apiUrl.replace('/api', ''); // socket server is without /api
+    this.socket = io(socketUrl, {
       auth: { token }   // send token in handshake
     });
 
     // connection & disconnection
-    this.socket.on('connect', () => console.log('Socket connected:', this.socket?.id));
-    this.socket.on('disconnect', (reason) => console.log('Socket disconnected:', reason));
-    this.socket.on('connect_error', (err) => console.log('Socket connection error:', err.message));
+    this.socket.on('connect', () => {
+      console.log('✓ Socket connected:', this.socket?.id);
+    });
+    this.socket.on('disconnect', (reason) => {
+      console.log('✗ Socket disconnected:', reason)
+    });
+    this.socket.on('connect_error', (err) => {
+      console.log('Socket connection error:', err.message)
+    });
   }
 
   // Emit some event to the server

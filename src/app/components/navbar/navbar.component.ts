@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
 import { AuthService } from '../../services/auth.service';
 import { ContextService } from '../../services/context.service';
+import { UtilityService } from '../../services/utility.service';
 import { Channel } from '../../models/channel.model';
 
 @Component({
@@ -14,6 +15,7 @@ import { Channel } from '../../models/channel.model';
 export class NavbarComponent implements OnInit {
   private router = inject(Router);
   private authService = inject(AuthService);
+  readonly utility = inject(UtilityService);
   readonly context = inject(ContextService);
 
   user = this.authService.currentUser;

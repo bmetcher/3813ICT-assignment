@@ -42,13 +42,16 @@ export class ChatComponent implements OnInit, OnDestroy {
       return;
     }
 
+    console.log('Chat: Sending message to channel:', channel.name, channel._id);
+    console.log('Chat: Message content:', content);
+
     this.messageService.sendMessage(channel._id, { content }).subscribe({
       next: (res) => {
-        console.log('Message sent:', res.createdMessage);
+        console.log('Chat: Message sent successfully:', res.createdMessage);
         // message will be added to context via socket event
       },
       error: (err) => {
-        console.error('Failed to send message:', err);
+        console.error('Chat: Failed to send message:', err);
         alert('Failed to send message');
       }
     });

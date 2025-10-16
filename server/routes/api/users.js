@@ -1,11 +1,13 @@
 const express = require('express');
 const router = express.Router();
 const bcrypt = require('bcrypt');       // for hashing passwords
+const fs = require('fs');
+const path = require('path');
+const { uploadAvatar } = require('../../utilities/upload');
 const { authenticate } = require('../../utilities/authMiddleware');
 const { getDb } = require('../../mongo');
 const { requireSuper } = require('../../utilities/accessControl');
 const { ObjectId } = require('mongodb');
-
 const { emitUserUpdated, emitUserDeleted, emitMembershipDeleted } = require('../../sockets');
 
 // CREATE a user
@@ -29,6 +31,91 @@ router.post('/', authenticate, async (req, res) => {
         const safeUser = { ...restUser, _id: userResult.insertedId };
         res.status(201).json({ createdUser: safeUser, success: true });
     } catch (err) {
+        res.status(400).json({ error: err.message });
+    }
+});
+
+// POST upload an avatar
+router.post('/:userId/avatar', authenticate, uploadAvatar.single('avatar'), async (req, res) => {
+    try {
+        const db = getDb();
+        const targetUserId = new ObjectId(req.params.userId);
+        
+        console.log('Avatar upload request for user:', targetUserId.toString());
+        console.log('Uploaded file:', req.file);
+
+        // check the request is coming from the user themselves
+        const isSelf = req.userId === req.params.userId;
+        if (!isSelf) {
+            // unless they're super admin
+            const membership = await db.collection('memberships').findOne({
+                userId: new ObjectId(req.userId)
+            });
+            if (!membership || membership.role !== 'super') {
+                // delete uploaded file if unauthorized
+                if (req.file) fs.unlinkSync(req.file.path);
+                return res.status(403).json({ error: 'Forbidden' });
+            }
+        }
+
+        // check if file was uploaded
+        if (!req.file) {
+            return res.status(400).json({ error: 'No file uploaded' });
+        }
+        
+        // build avatar path for database (relative path)
+        const avatarPath = `public/avatars/${req.file.filename}`;
+        console.log('Saving avatar path to database:', avatarPath);
+
+        // get user's old avatar to delete it
+        const user = await db.collection('users').findOne({ _id: targetUserId });
+        if (user && user.avatar && user.avatar !== 'public/avatars/default.png') {
+            // delete old avatar file
+            const oldPath = path.join(__dirname, '../../', user.avatar);
+            console.log('Checking for old avatar:', oldPath);
+
+            // check if file exists before trying to delete it
+            if (fs.existsSync(oldPath)) {
+                try {
+                    fs.unlinkSync(oldPath);
+                    console.log('Deleted old avatar:', oldPath);
+                } catch (err) {
+                    console.error('Failed to delete old avatar:', err);
+                }
+            } else {
+                console.log('Old avatar file does not exist, skipping delete');
+            }
+        }
+
+        // update user document with new avatar path
+        await db.collection('users').updateOne(
+            { _id: targetUserId },
+            { $set: { avatar: avatarPath } }
+        );
+
+        // fetch updated user (exclude password)
+        const updatedUser = await db.collection('users').findOne(
+            { _id: targetUserId },
+            { projection: { password: 0 } }
+        );
+
+        console.log('Avatar updated successfully');
+
+        // emit update to all connected clients
+        const { emitUserUpdated } = require('../../sockets');
+        emitUserUpdated(updatedUser);
+
+        res.json({
+            user: updatedUser,
+            avatarUrl: avatarPath,
+            success: true
+        });
+    } catch (err) {
+        console.error('Avatar upload error:', err);
+        // delete file if error occurs
+        if (req.file) {
+            fs.unlinkSync(req.file.path);
+        }
         res.status(400).json({ error: err.message });
     }
 });

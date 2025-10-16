@@ -1,13 +1,10 @@
 import { Component, Input, inject, effect } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-
 import { Channel } from '../../models/channel.model';
-import { User } from '../../models/user.model';
 import { ContextService } from '../../services/context.service';
-import { ChannelService } from '../../services/channel.service';
-import { AuthService } from '../../services/auth.service';
 import { UserService } from '../../services/user.service';
+import { UtilityService } from '../../services/utility.service';
 
 @Component({
   selector: 'app-details',
@@ -18,10 +15,9 @@ import { UserService } from '../../services/user.service';
 export class DetailsComponent {
   @Input() channel: Channel | null = null;
 
-  private channelService = inject(ChannelService);
-  private authService = inject(AuthService);
   private userService = inject(UserService);
   private context = inject(ContextService);
+  readonly utility = inject(UtilityService);
 
   users = this.context.users;
   currentChannel = this.context.currentChannel;
@@ -30,9 +26,17 @@ export class DetailsComponent {
     // reload users automatically when currentChannel changes
     effect(() => {
       const channel = this.context.currentChannel();
+      console.log('Details: Channel changed to:', channel?.name);
+
       if(channel) {
-        this.userService.getUsersByChannel(channel._id).subscribe(users => {
-          this.context.setUsers(users);
+        this.userService.getUsersByChannel(channel._id).subscribe({
+          next: (users) => {
+            console.log('Details Loaded users:', users.length);
+            this.context.setUsers(users);
+          },
+          error: (err) => {
+            console.error('Details: Failed to load users:', err);
+          }
         });
       } else {
         this.context.setUsers([]);

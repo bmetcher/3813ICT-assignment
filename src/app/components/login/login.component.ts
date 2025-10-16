@@ -5,6 +5,7 @@ import { CommonModule } from '@angular/common';
 import { firstValueFrom } from 'rxjs';
 import { AuthService } from '../../services/auth.service';
 import { ContextService } from '../../services/context.service';
+import { UserService } from '../../services/user.service';
 
 @Component({
   selector: 'app-login',
@@ -15,6 +16,7 @@ import { ContextService } from '../../services/context.service';
 export class LoginComponent {
   private authService = inject(AuthService);
   private contextService = inject(ContextService);
+  private userService = inject(UserService);
   private router = inject(Router);
 
   // form signals
@@ -53,13 +55,13 @@ export class LoginComponent {
         return;
       }
 
-      // store auth data
-      this.authService.setCurrentUser({
-        _id: data.userId,
-        email: this.email()
-      } as any);
-      console.log('Login successfull, loading user data..');
-
+      console.log('Login successful, loading user data..');
+      // fetch full user and store in auth (local storage)
+      const fullUser = await firstValueFrom(
+        this.userService.getUser(data.userId)
+      );
+      this.authService.setCurrentUser(fullUser);
+      
       // load all user context (groups, channels..)
       await this.contextService.loadUserContext(data.userId);
 

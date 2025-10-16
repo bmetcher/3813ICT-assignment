@@ -9,8 +9,8 @@ Web-based chat application with groups, channels and role-based user permissions
 * Role-based access control: Super Admin, Group Admin, and User
 * Polished, reactive UI using Angular signals and components.
 
-<br>
-
+<br><br>
+***
 ### Data Structures
 #### Models
 *Notes:*
@@ -80,8 +80,7 @@ MONGODB_URI=mongodb://localhost:27017
 DB_NAME=chat-app
 ```
 
-<br>
-
+***
 ### REST API
 ??? Do we need to mention specific returns?
 * All endpoints return a JSON object: 
@@ -96,6 +95,8 @@ DB_NAME=chat-app
 |Method|Endpoint             |Auth |Description                            |
 |------|---------------------|-----|---------------------------------------|
 |POST  |`/`                  |Super|Create a new user (password hashed)    |
+|POST  |`/:userId/avatar`    |Self |Upload a new avatar for the user       |
+|GET   |`/:userId`           |Auth |Get a single user by ID                |
 |GET   |`/group/:groupId`    |Auth |Get all users in a group               |
 |GET   |`/channel/:channelId`|Auth |Get all users in a channel (with role) |
 |PUT   |`/:userId`           |Self |Update a user                          |
@@ -141,8 +142,7 @@ DB_NAME=chat-app
 |PUT   |`/channel/:channelId/message/:messageId`|Self |Edit a message                       |
 |DELETE|`/channel/:channelId/message/:messageId`|Self |Delete a message                     |
 
-<br>
-
+***
 ### Socket.io Emittals
 Entities being created, updated, or deleted are emitted
 <br>
@@ -156,8 +156,7 @@ Except 'Create' for 'User' and 'Group' being created, as it is only relevant to 
 
 Clients can listen for these events to update reactive UI automatically without polling
 
-<br>
-
+***
 ### Angular Architecture
 #### Component Structure
 ```
@@ -198,6 +197,8 @@ app/
   * CRUD including: 
     * get user (or list of users by group/channel)
     * update password or details
+* `utilities.service.ts`
+  * AvatarHelper
 
 #### Signals
 * `currentChannel`: currently selected channel (for chat component/s)
@@ -206,30 +207,97 @@ app/
 
 <br>
 
+***
 ### Data Handling & Persistence
 * **Frontend**: Signals in context store reactive data, synchronized with MongoDB and Sockets
 * **Backend**: Node.js + Express, CRUD operations updated MongoDB collections (`users`, `groups`, `channels`, `memberships`, `messages`, `bans`)
 * **Super Admin**: Can create or remove users and groups. Where admins manage channels, and invite, remove or ban users in groups or channels.
 
+***
 ### Notes & Future Improvements
 #### Fixes & Extras
-* Initial seed test file
-  * Include creating super admin, group, etc.
-
-* Multimedia attachments
-* Video chat (PeerJS)
-* messages.js (server)
-  * allow admin to delete other user's messages
-* bans.js (server)
-  * "grey out server icon" >> provide client ban details (reason, duration, appeal?)
-* edit/delete "history" for bans & messages
-* "Welcome/Global Group" for new users
+* [X] Initial seed test file
+* [X] Include creating super admin, group, etc.
+<br>
+* [...] Multimedia Handling -- Upload/Download
+  * [X] User Avatars
+  * [ ] Group Icons
+  * [ ] Files (size limit, type limit)
+    * file types later?: (.mp3, .wav, .png, .jpg, .gif, .mp4)
+  * [ ] Display Timestamps on Posts (Optional in Settings?)
+<br><br>
+* [ ] Video chat (PeerJS)
+  * [ ] Output Component Display
+  * [ ] Input & Display Component "Adjust" for Video Chat
+  * [ ] "React" with emotes?
+* [ ] Screen Share?
+<br><br>
+**Messages & Bans**
+* [ ] allow admin to delete other *user's messages
+* [ ] "greyed out" server; click --> provide a client their ban's details
+* [ ] edit/delete --> "graveyard" or "cold storage" for "deleted" bans and messages
+* [ ] Handle message display of users who aren't in the channel anymore
+<br><br>
+**Groups**
+* [ ] "Welcome/Global Group" for new users
+* [ ] "Super Group" for admin UI? or else?
+<br><br>
+**UI**
+* [ ] Pop-up Lists (Modals??)
+  * [ ] Settings there?
 
 #### Polish
-* Animations
-* Customizations: groups, channels, user profile, UI theme
+* [ ] Favourite/Home a Channel? (load on each login?)
+
+* [ ] Base UI Theme
+  * [ ] Colour
+  * [ ] Scale; no weird scrolling, "size: 1/1.25/1.50/1.75/2.0" or so
+    * [ ] Show/hide Navbar, Details
+  * [ ] Icons
+
+* [ ] Animations
+  * [ ] UI Buttons
+    * [ ] Expand/Hide
+    * [ ] Output Settings
+***
+**LATER UPDATES**
+* [ ] Customizations
+  * [ ] Compact/Full Messages
+  * [ ] Rounded/Square UI, etc.
+  * [ ] Colour Themes
+  * [ ] Group or Channel Appearances??
+
+***
+### !!! For Me to Integrate to current README !!!
+##### ??? Login Flow
+Login -> Get Token -> Fetch full user object 
+-> Store in AuthService -> Load Context -> Navigate to Chat
+##### Assets Structure
+* **Backend** (`/server/public/`): User-generated content (avatars, attachments, group icons..)
+```
+chat-app/
+│
+├── server/
+│   ├── node_modules/
+│   ├── public/                      # ← USER CONTENT (persists, backed up)
+│   │   ├── avatars/
+│   │   │   ├── default.png         # ← Default fallback
+│   │   │   ├── 68eb82a141b296915cdb8b60.jpg  # ← User avatars by ID
+│   │   │   └── 68f076430decb0cd8c5eab21.png
+│   │   ├── groupIcons/
+│   │   │   ├── default.png
+│   │   │   └── 68eb86131c640a9dcb4e9dd7.jpg
+│   │   └── attachments/
+│   │       └── 68f123_document.pdf
+...
+```
+**MULTER**: Node.JS middleware that handles file uploads from HTML forms.
 
 
+* **Frontend** (`/src/assets/`): UI elements (icons, fonts, default images..)
+
+
+***
 
 ### Roles & Permissions (keep or remove this?)
 

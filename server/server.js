@@ -4,6 +4,12 @@ const { connect } = require('./mongo');
 const cors = require('cors');
 const { checkExpiredBans } = require('./services/banService');
 
+const app = express();
+const PORT = 3000;
+
+// serve the public folder for assets
+app.use('/public', express.static('public'));
+
 // CRUD routes
 const usersRoutes = require('./routes/api/users');
 const loginRoutes = require('./routes/api/login');
@@ -12,12 +18,10 @@ const channelsRoutes = require('./routes/api/channels');
 const messagesRoutes = require('./routes/api/messages');
 const bansRoutes = require('./routes/api/bans');
 
-const app = express();
-const PORT = 3000;
-
 // middleware
 app.use(express.json());    // parse JSON data
 app.use(cors({ origin: 'http://localhost:4200' }))  // allow angular cors
+
 // CRUD routes
 app.use('/api/login', loginRoutes);
 app.use('/api/users', usersRoutes);
@@ -25,8 +29,7 @@ app.use('/api/groups', groupsRoutes);
 app.use('/api/channels', channelsRoutes);
 app.use('/api/messages', messagesRoutes);
 app.use('/api/bans', bansRoutes);
-// serve the public folder (assets stored here)
-app.use('/public', express.static('public'));
+
 
 // Running the server
 async function startServer() {
