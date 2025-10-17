@@ -105,7 +105,7 @@ router.get('/:userId', authenticate, async (req, res) => {
             .toArray();
 
         // return result
-        res.json({ groups, success: true });
+        res.json({ groups, memberships, success: true });
     } catch (err) {
         res.status(400).json({ error: err.message });
     }
@@ -246,6 +246,47 @@ router.delete('/:groupId', authenticate, async (req, res) => {
         targetChannels.forEach(ch => emitChannelDeleted(ch));
         emitGroupDeleted(targetGroup);
 
+        res.json({ success: true });
+    } catch (err) {
+        res.status(400).json({ error: err.message });
+    }
+});
+
+// DELETE - remove a user from a group, & delete their membership
+router.delete('/:groupId/:userId', authenticate, async (req, res) => {
+    try {
+        const db = getDb();
+        const targetGroupId = new ObjectId(req.params.groupId);
+        const targetUserId = new ObjectId(req.params.userId);
+        await requireAdmin(db, req.userId, targetGroupId);
+
+        // find the membership
+        const membership = await db.collection('memberships').findOne({
+            groupId: targetGroupId,
+            userId: targetUserId
+        });
+
+        if (!membership) {
+            return res.status(404).json({ error: 'Membership not found' });
+        }
+
+        // don't allow removing super admins
+        if (membership.role === 'super') {
+            return res.status(400).json({ error: 'Cannot remove Super Admin' });
+        }
+
+        if (membership.role === 'admin') {
+            await requireSuper(db, req.userId);
+        }
+
+        // delete the membership
+        await db.collection('memberships').deleteOne({
+            groupId: targetGroupId,
+            userId: targetUserId
+        });
+
+        // emit the deletion
+        emitMembershipDeleted(membership);
         res.json({ success: true });
     } catch (err) {
         res.status(400).json({ error: err.message });

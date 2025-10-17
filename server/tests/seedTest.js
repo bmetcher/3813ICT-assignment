@@ -1,4 +1,5 @@
 // (--save-dev: mocha, chai, supertest)
+require('dotenv').config();
 const chai = require('chai');
 const expect = chai.expect;
 const request = require('supertest');
@@ -6,6 +7,9 @@ const { connect, getDb } = require('../mongo');
 const app = require('../server');
 const bcrypt = require('bcrypt');
 const { ObjectId } = require('mongodb');
+
+const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017';
+const DB_NAME = process.env.DB_NAME || 'chat-app';
 
 const SUPER_USER_ID = new ObjectId('68eb82a141b296915cdb8b60');
 const SUPER_GROUP_ID = new ObjectId('68eb86131c640a9dcb4e9dd7');
@@ -32,7 +36,7 @@ async function createUser(username, email, password = '123456') {
         })
         .set('Authorization', `Bearer ${token}`);
 
-    if (!res.body.createdUser) throw new Error(`User creation failed: ${JSON.stringiify(res.body)}`);
+    if (!res.body.createdUser) throw new Error(`User creation failed: ${JSON.stringify(res.body)}`);
 
     userIds.push(res.body.createdUser._id);
     return res.body.createdUser._id;
@@ -86,7 +90,7 @@ async function createGroup(name) {
         })
         .set('Authorization', `Bearer ${token}`);
 
-    if (!res.body.createdGroup) throw new Error(`Group creation failed: ${JSON.stringiify(res.body)}`);
+    if (!res.body.createdGroup) throw new Error(`Group creation failed: ${JSON.stringify(res.body)}`);
     
     groupIds.push(res.body.createdGroup._id);
     return res.body.createdGroup._id;
@@ -153,7 +157,7 @@ async function createChannel(name, groupId, description = '') {
 
     console.log('createChannel response:', res.status, res.body);
     if (res.status !== 201 || !res.body.newChannel) {
-        throw new Error(`Channel creation failed: ${JSON.stringiify(res.body)}`);
+        throw new Error(`Channel creation failed: ${JSON.stringify(res.body)}`);
     }
     channelIds.push(res.body.newChannel._id);
     return res.body.newChannel._id;
@@ -189,7 +193,7 @@ async function createMessage(channelId, content) {
         .set('Authorization', `Bearer ${token}`);
 
     if (res.status !== 201 && !res.body.createdMessage) {
-        throw new Error(`Message creation failed: ${JSON.stringiify(res.body)}`);
+        throw new Error(`Message creation failed: ${JSON.stringify(res.body)}`);
     }
     messageIds.push(res.body.createdMessage._id);
     return res.body.createdMessage?._id;
@@ -277,7 +281,7 @@ describe('Comprehensive CRUD Operation Testing', function () {
 
     before(async() => {
         // connect to test db
-        await connect('mongodb://192.168.10.100:27017', 'chat-app');
+        await connect(MONGODB_URI, DB_NAME);
         db = getDb();
 
         console.log('\n #### Clearing Database !! ####');
