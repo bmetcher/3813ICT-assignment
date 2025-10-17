@@ -1,4 +1,43 @@
+<div class="input-container">
+    <!--Attachment Preview-->
+    <div *ngIf="previewUrl()" class="attachment-preview">
+        <img [src]="previewUrl()" alt="Preview"/>
+        <button class="remove-preview" (click)="removeAttachment()">x</button>
+    </div>
 
-<input class="form-control" [(ngModel)]="newMessage" placeholder="Type a message"/>
-<button class="btn btn-primary m-2" (click)="addMessage()">Send</button>
+    <!--Input Row-->
+    <div class="input-row">
+        <!--Hidden File Input-->
+        <input #fileInput
+            type="file"
+            id="attachment-input"
+            accept="image/*"
+            style="display: none;"
+            (change)="onFileSelect($event)"
+        />
+        <!--Attachment Button-->
+        <button
+            class="attach-btn"
+            (click)="fileInput.click()"
+            [disabled]="uploading()"
+            title="Attach Image">
+            📎
+        </button>
 
+        <!--Message Input-->
+        <input type="text"
+            class="message-input"
+            [(ngModel)]="messageContent"
+            (keydown.enter)="sendMessage()"
+            placeholder="Type a message..."
+            [disabled]="uploading()"
+        />
+
+        <button
+            class="send-btn"
+            (click)="sendMessage()"
+            [disabled]="uploading() || (!messageContent().trim() && !selectedFile())">
+            {{ uploading() ? '⏳' : '📤' }}
+        </button>
+    </div>
+</div>

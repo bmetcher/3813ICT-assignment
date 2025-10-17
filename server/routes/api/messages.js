@@ -7,6 +7,7 @@ const { canAccessChannel } = require('../../utilities/accessControl');
 
 // sockets.io for emitting message updates to sockets
 const { emitMessageCreated, emitMessageUpdated, emitMessageDeleted } = require('../../sockets');
+const { uploadAttachment } = require('../../utilities/upload');
 
 // POST a new channel message
 router.post('/channel/:channelId', authenticate, async (req, res) => {
@@ -40,6 +41,30 @@ router.post('/channel/:channelId', authenticate, async (req, res) => {
         res.status(201).json({ createdMessage: newMessage, success: true });
     } catch (err) {
         res.status(400).json({ error: err.message });
+    }
+});
+
+// POST -- upload attachment
+router.post('/attachment', authenticate, uploadAttachment.single('attachment'), async (req, res) => {
+    try {
+        if (!req.file) {
+            return res.status(400).json({ error: 'No file uploaded' });
+        }
+
+        const attachmentPath = `public/attachments/${req.file.filename}`;
+        console.log('Attachment uploaded:', attachmentPath);
+
+        res.json({
+            attachmentUrl: attachmentPath,
+            success: true
+        });
+    } catch (err) {
+        console.error('Attachment upload error:', err);
+        if (req.file) {
+            const fs = require('fs');
+            fs.unlinkSync(req.file.path);
+        }
+        res.status(500).json({ error: err.message });
     }
 });
 

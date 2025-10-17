@@ -24,18 +24,20 @@ export class ChatComponent implements OnInit, OnDestroy {
   currentChannel = this.context.currentChannel;
 
   ngOnInit(): void {
-    // connect to socket when component initializes
+    // connect to socket & set up listeners when chat initializes
     this.socketService.connect();
+    this.context.setupSocketListeners();
     console.log('Chat component initialized');
   }
 
   ngOnDestroy(): void {
-    // disconnect socket when leaving chat
+    // cleanup sockets and disconnect when exiting chat
+    this.context.cleanupSocketListeners();
     this.socketService.disconnect();
   }
 
   // handle message submission from input component
-  onMessageSubmit(content: string): void {
+  onMessageSubmit(data: { content: string, attachment?: string }): void {
     const channel = this.currentChannel();
     if (!channel) {
       console.error('No channel selected');
@@ -43,9 +45,9 @@ export class ChatComponent implements OnInit, OnDestroy {
     }
 
     console.log('Chat: Sending message to channel:', channel.name, channel._id);
-    console.log('Chat: Message content:', content);
+    console.log('Chat: Messagewith data:', data);
 
-    this.messageService.sendMessage(channel._id, { content }).subscribe({
+    this.messageService.sendMessage(channel._id, data ).subscribe({
       next: (res) => {
         console.log('Chat: Message sent successfully:', res.createdMessage);
         // message will be added to context via socket event

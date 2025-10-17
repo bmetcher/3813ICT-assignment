@@ -5,6 +5,7 @@ import { BehaviorSubject, tap } from 'rxjs';
 
 import { environment } from '../../environments/environment';
 import { User } from '../models/user.model';
+import { Socket } from 'socket.io-client';
 
 @Injectable({
   providedIn: 'root'
@@ -19,7 +20,7 @@ export class AuthService {
   public token$ = new BehaviorSubject<string | null>(localStorage.getItem(this.tokenKey));
   public userId$ = new BehaviorSubject<string | null>(localStorage.getItem(this.userIdKey));
 
-  // inject angular services
+  // inject services
   private http = inject(HttpClient);
   private router = inject(Router);
 
@@ -44,6 +45,10 @@ export class AuthService {
 
   // Logout: clear auth state and redirect to home
   logout() {
+    // clear user fully
+    this._user.set(null);
+    localStorage.removeItem('currentUser');
+
     localStorage.removeItem(this.tokenKey);
     localStorage.removeItem(this.userIdKey);
     this.token$.next(null);

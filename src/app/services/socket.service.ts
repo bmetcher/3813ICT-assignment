@@ -43,6 +43,20 @@ export class SocketService {
     });
   }
 
+  // join a group room to receive group-wide events
+  joinGroup(groupId: string) {
+    if (this.socket) {
+      this.socket.emit('joinGroup', groupId);
+      console.log('Joined group room:', groupId);
+    }
+  }
+  leaveGroup(groupId: string) {
+    if (this.socket) {
+      this.socket.emit('leaveGroup', groupId);
+      console.log('Left group room:', groupId);
+    }
+  }
+
   // Emit some event to the server
   emit(event: string, data?: any): void {
     if (!this.socket?.connected) {

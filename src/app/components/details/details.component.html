@@ -1,6 +1,6 @@
-<div class="p-3 d-flex flex-column h-100">
+<div class="details-panel">
     <!--Channel Info-->
-    <div class="mb-3 border-bottom pb-2">
+    <div class="details-header">
         <h5> {{ currentChannel()?.name || 'No Channel' }} </h5>
         <small class="text-muted" *ngIf="currentChannel()?.description">
             {{ currentChannel()?.description }}
@@ -8,24 +8,53 @@
     </div>
 
     <!--Members List-->
-    <div *ngIf="currentChannel()" class="flex-grow-1 overflow-auto">
-        <div class="d-flex align-items-center mb-4">
+    <div *ngIf="currentChannel()" class="details-content">
+        <div class="section-title">
             <h6 class="flex-grow-1 m-2">Users ({{ users().length }})</h6>
         </div>
         
-        <ul class="list-unstyled" *ngIf="users().length > 0; else noUsers">
-            <li *ngFor="let user of users()">
-                <div class="d-flex align-items-center mb-2">
+        <ul class="member-list" *ngIf="users().length > 0; else noUsers">
+            <li *ngFor="let user of users()"
+                class="member-item-wrapper"
+                (mouseenter)="hoveredUser = user._id"
+                (mouseleave)="hoveredUser = null">
+
+                <div class="member-item d-flex align-items-center mb-2">
                     <img 
                         [src]="utility.getAvatarUrl(user.avatar)" 
-                        class="rounded-circle me-2"
-                        style="width:24px;height:24px;"
+                        class="member-avatar"
                         [alt]="user.username + 'avatar'"
                     >
-                    <span class="flex-grow-1">{{ user.username }}</span>
-                    <!-- <span class="badge bg-secondary" *ngIf="user.role">
-                        {{ user.role }}
-                    </span> -->
+                    <span class="member-name">{{ user.username }}</span>
+                    <span class="badge bg-secondary" *ngIf="getUserRole(user._id) === 'admin'">
+                        Admin
+                    </span>
+
+                    <!--Admin Actions-->
+                    <button *ngIf="hoveredUser === user._id && canManageUser(user._id)"
+                            class="gear-btn-small"
+                            #gearButton
+                            (click)="toggleUserDropdown(user._id, $event); $event.stopPropagation()">
+                        ⚙
+                    </button>
+                </div>
+
+                <!--User Actions Dropdown-->
+                <div *ngIf="showUserDropdown === user._id"
+                    class="dropdown-menu-details"
+                    [style.top.px]="dropdownTop"
+                    [style.left.px]="dropdownLeft"
+                    (click)="$event.stopPropagation()">
+                    <button *ngIf="getUserRole(user._id) === 'user'"
+                            (click)="promoteUser(user._id)">
+                        ⬆️ Promote to Admin
+                    </button>
+                    <button *ngIf="getUserRole(user._id) === 'admin'"
+                            (click)="demoteUser(user._id)">
+                        ⬇️ Demote to User
+                    </button>
+                    <button (click)="banUser(user._id)">🚫 Ban from Channel</button>
+                    <button (click)="removeUser(user._id)" class="danger">❌ Remove from Group</button>
                 </div>
             </li>
         </ul>

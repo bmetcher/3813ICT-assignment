@@ -23,20 +23,25 @@ const avatarStorage = multer.diskStorage({
     }
 });
 
+// Attachment storage config
+const attachmentStorage = multer.diskStorage({
+    destination: (req, file, cb) => cb(null, attachmentsDir),
+    filename: (req, file, cb) => {
+        // maybe convert to use messageId instead
+        const uniqueName = `${Date.now()}-${Math.round(Math.random() * 1E9)}${path.extname(file.originalname)}`;
+        cb(null, uniqueName);
+    }
+});
+
 // filter for image files
 const imageFilter = function (req, file, cb) {
     // allowed file types
-    const allowedTypes = /jpeg|jpg|png|gif|webp/;
-    // check extension
-    const extname = allowedTypes.test(path.extname(file.originalname).toLowerCase());
-    // check MIME type
-    const mimetype = allowedTypes.test(file.mimetype);
-
-    // check the file is safe & matches as it is supposed to
-    if (mimetype && extname) {
+    const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp'];
+    // check it's the appropriate & safe combination
+    if (allowedTypes.includes(file.mimetype)) {
         return cb(null, true);
     } else {
-        cb(new Error('Only image files are allowed: jpeg, jpg, png, gif, webp'));
+        cb(new Error('Invalid file type. Only JPEG, PNG, GIF, and WebP are allowed'));
     }
 };
 
@@ -44,9 +49,15 @@ const imageFilter = function (req, file, cb) {
 const uploadAvatar = multer({
     storage: avatarStorage,
     limits: {
-        fileSize: 5 * 1024 * 1024 // 5MB is the maximum
+        fileSize: 8 * 1024 * 1024 // 8MB is the maximum
     },
     fileFilter: imageFilter
 });
+// upload image attachments
+const uploadAttachment = multer({
+    storage: attachmentStorage,
+    fileFilter: imageFilter,
+    limits: { fileSize: 8 * 1024 * 1024 } // 8MB size limit
+})
 
-module.exports = { uploadAvatar };
+module.exports = { uploadAvatar, uploadAttachment };

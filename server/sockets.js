@@ -8,6 +8,9 @@ let io;
 function initSocket(server) {
     io = require('socket.io')(server, { cors: { origin: '*' } });
 
+    // map online userIds and their socketIds
+    const onlineUsers = new Map();
+
     // Add auth middleware before connection
     io.use((socket, next) => {
         // extract token from handshake
@@ -26,22 +29,49 @@ function initSocket(server) {
     
 
     io.on('connection', (socket) => {
-        console.log('a user connected: ', socket.id, 'userId:', socket.userId);
+        console.log('User connected: ', socket.id, 'userId:', socket.userId);
 
-        // join/leave rooms
+        if (!onlineUsers.has(socket.userId)) {
+            onlineUsers.set(socket.userId, new Set());
+        }
+        onlineUsers.get(socket.userId).add(socket.id);
+
+        // join/leave channels
         socket.on('joinChannel', (channelId) => {
             socket.join(channelId);
             console.log(`User ${socket.userId} joined channel ${channelId}`);
+
+            // broadcast user joined to channel
+            io.to(channelId).emit('userJoinedChannel', {
+                userId: socket.userId,
+                channelId
+            });
         });
 
         socket.on('leaveChannel', (channelId) => {
             socket.leave(channelId)
             console.log(`User ${socket.userId} left ${channelId}`);
+
+            // broadcast user left channel
+            io.to(channelId).emit('userLeftChannel', {
+                userId: socket.userId,
+                channelId
+            });
         });
 
         // disconnect
         socket.on('disconnect', () => {
-            console.log('user disconnected:', socket.id);
+            console.log('User disconnected:', socket.id);
+
+            // remove this socket from user's connections
+            if (onlineUsers.has(socket.userId)) {
+                onlineUsers.get(socket.userId).delete(socket.id);
+
+                // if user has no more connections, remove them
+                if (onlineUsers.get(socket.userId).size === 0) {
+                    onlineUsers.delete(socket.userId);
+                }
+            }
         });
     });
 
@@ -79,7 +109,10 @@ async function emitMessageDeleted(message) {
 async function emitBanCreated(ban) {
     if (!io) throw new Error('Socket.IO not initialized');
     try {
-        io.to(ban.groupId.toString()).emit('banCreated', ban);
+        const channels = await db.collection('channels').find({ groupId: ban.groupId });
+        channels.forEach(ch => {
+            io.to(ch._id.toString()).emit('banCreated', ban);
+        })
     } catch (err) {
         console.error('[SOCKET] emitBanCreated error:', err);
     }
@@ -193,8 +226,13 @@ async function emitUserDeleted(user) {
     }
 }
 
+// helper to check if a user is online
+function isUserOnline(userId) {
+    return onlineUsers.has(userId) && onlineUsers.get(userId).size > 0;
+}
+
 module.exports = { 
-    initSocket,
+    initSocket, isUserOnline,
     emitMessageCreated, emitMessageUpdated, emitMessageDeleted,
     emitBanCreated, emitBanUpdated, emitBanDeleted,
     emitGroupUpdated, emitGroupDeleted,

@@ -6,7 +6,7 @@ import { Ban } from '../models/ban.model';
 @Injectable({
   providedIn: 'root'
 })
-export class BansService {
+export class BanService {
   private http = inject(HttpClient);
   private API = `${environment.apiUrl}/bans`;
 

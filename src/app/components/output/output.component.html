@@ -1,21 +1,54 @@
-<div *ngIf="channelId; else noChannel" class="container p-3">
-    <!-- <h5> {{ channel.name }} <small class="text-muted"><br> Channel Description...</small></h5> -->
+<div *ngIf="channelId; else noChannel" 
+    class="messages-container" 
+    #messagesContainer
+    (scroll)="onScroll()">
     <div *ngIf="messages().length > 0; else noMessages">
-        <div *ngFor="let message of messages()" class="card mb-1">
-            <div class="card-body d-flex">
-                <img [src]="getUserAvatar(message.userId)" class="rounded-circle me-2" style="width:32px;height:32px;">
-                <div>
-                    <div class="fw-bold"> {{ getUsername(message.userId) }} </div>
-                    <div>{{ message.content }}</div>
+        <div *ngFor="let message of messages()" class="message-wrapper">
+            <div class="message-item">
+                <!--Avatar-->
+                <img
+                    [src]="getUserAvatar(message.userId)" 
+                    class="message-avatar" 
+                    [alt]="getUsername(message.userId)"/>
+                <div class="message-spacer"></div>
+                <!--Content-->
+                <div class="message-content">
+                    <div class="message-header">
+                        <span class="message-author">{{ getUsername(message.userId) }}</span>
+                        <span class="message-timestamp">{{ message.timestamp | date:'short' }}</span>
+                    </div>
+                    <div class="message-text" *ngIf="message.content">{{ message.content }}</div>
+
+                    <!--Display Attachment-->
+                    <div *ngIf="message.attachment" class="message-attachment">
+                        <img [src]="getAttachmentUrl(message.attachment)"
+                            alt="attachment"
+                            (click)="openImageModal(message.attachment)"/>
+                    </div>
+                </div>
+                <!--Edit/Delete Buttons (Only for self)-->
+                <div *ngIf="isOwnMessage(message)" class="message-actions">
+                    <button class="btn-edit" (click)="editMessage(message)">✏️</button>
+                    <button class="btn-delete" (click)="deleteMessage(message)">🗑️</button>
                 </div>
             </div>
+            
         </div>
     </div>
+
     <ng-template #noMessages>
-        <div class="text-muted p-3">No messages...</div>
+        <div class="no-messages">
+            <div class="no-=messages-icon">💬</div>
+            <div>No messages yet. Start a conversation!</div>
+        </div>
     </ng-template>
 </div>
 
 <ng-template #noChannel>
-    <div class="text-muted p-3">No Channel selected</div>
+    <div class="no-channel">
+        <div style="text-align: center;">
+            <div style="font-size: 48px; margin-bottom: 16px;">👋</div>
+            <div>Select a channel to start chatting</div>
+        </div>
+    </div>
 </ng-template>

@@ -1,23 +1,69 @@
-<div class="d-flex flex-column vh-100 border-end" style="width: 320px;">
-    <div class="flex-grow-1 overflow-auto">
+<div class="sidebar">
+    <div class="channels-list">
+        <div *ngIf="isSuperAdmin()" class="admin-actions">
+            <button class="admin-btn" (click)="createUser()">➕ New User</button>
+            <button class="admin-btn" (click)="createGroup()">➕ New Group</button>
+        </div>
         <ng-container *ngIf="user() && groups().length > 0; else noGroups">
             <!-- Group & Channel List -->
-            <div *ngFor="let group of groups()" class="mb-3">
-                <div class="fw-bold px-2" (click)="toggleGroup(group._id)" style="cursor: pointer;"> 
-                    {{ group.open ? 'V' : '>' }} {{ group.name }}
-                </div>
+            <div *ngFor="let group of groups()" style="margin-bottom: 16px;">
+                <div class="group-header-wrapper"
+                    (mouseenter)="hoveredGroup = group._id"
+                    (mouseleave)="hoveredGroup = null">
+                    <div class="group-header" (click)="toggleGroup(group._id)">
+                        <span class="group-icon" [class.open]="group.open">▶</span>
+                        {{ group.name }}
+                    </div>
 
+                    <!--Admin for Group-->
+                    <button *ngIf="hoveredGroup === group._id && isGroupAdmin(group._id)"
+                            class="gear-btn"
+                            (click)="toggleGroupDropdown(group._id, $event);"
+                            (mousedown)="$event.stopPropagation()">
+                    </button>
+
+                    <!--Dropdown Menu-->
+                    <div *ngIf="showGroupDropdown === group._id"
+                        class="dropdown-menu"
+                        [style.top.px]="groupDropdownTop"
+                        [style.left.px]="groupDropdownLeft"
+                        (click)="$event.stopPropagation()">
+                        <button (click)="createChannel(group._id)">➕ Add Channel</button>
+                        <button (click)="editGroup(group._id)">✏️ Edit Group</button>
+                        <button (click)="deleteGroup(group._id)" class="danger">🗑️ Delete Group</button>
+                    </div>
+                </div>
+                
                 <!--Channels of a Group-->
-                <ul *ngIf="group.open" class="list-unstyled mb-0">
+                <ul *ngIf="group.open" class="channel-list">
                     <ng-container *ngFor="let channel of channels()">
-                        <li 
-                            *ngIf="channel.groupId === group._id"
-                            class="px-3 py-2 hover"
-                            [class.bg-light]="isActive(channel)"
-                            (click)="selectChannel(channel)"
-                            style="cursor: pointer;"
-                        >
-                            # {{ channel.name }}
+                        <li *ngIf="channel.groupId === group._id"
+                            class="channel-item-wrapper"
+                            (mouseenter)="hoveredChannel = channel._id"
+                            (mouseleave)="hoveredChannel = null">
+
+                            <div class="channel-item"
+                                [class.active]="isActive(channel)"
+                                (click)="selectChannel(channel)">
+                                {{ channel.name }}
+                            </div>
+
+                            <!--Channel Actions-->
+                            <button *ngIf="hoveredChannel === channel._id && isGroupAdmin(channel.groupId)"
+                                    class="gear-btn channel-gear"
+                                    (click)="toggleChannelDropdown(channel._id, $event);"
+                                    (mousedown)="$event.stopPropagation()">
+                            </button>
+
+                            <!--Channel Dropdown-->
+                            <div *ngIf="showChannelDropdown === channel._id"
+                                class="dropdown-menu"
+                                [style.top.px]="channelDropdownTop"
+                                [style.left.px]="channelDropdownLeft"
+                                (click)="$event.stopPropagation()">
+                                <button (click)="editChannel(channel._id)">✏️ Edit Channel</button>
+                                <button (click)="deleteChannel(channel._id)" class="danger">🗑️ Delete Channel</button>
+                            </div>
                         </li>
                     </ng-container>
                 </ul>
@@ -25,27 +71,29 @@
         </ng-container>
 
         <ng-template #noGroups>
-            <span class="text-muted px-2">No groups to display...</span>
+            <span class="no-groups">No groups to display...</span>
         </ng-template>
     </div>
 
     <!-- User Status & Settings -->
-    <div class="card flex-shrink-0 mb-1 p-2">
-        <div class="d-flex align-items-center justify-content-between p-2">
-            <div class="d-flex align-items-center" (click)="openProfile()" style="cursor: pointer;">
-                <img 
-                    [src]="utility.getAvatarUrl(user()?.avatar)"
-                    class="rounded-circle me-2"
-                    style="width: 32px; height: 32px;" 
-                />
-                <span> {{ user()?.username || user()?.email }} </span>
+    <div class="user-profile">
+        <div class="user-info" (click)="openProfile()">
+            <img
+                [src]="utility.getAvatarUrl(user()?.avatar)"
+                class="user-avatar"
+                alt="User avatar"
+            />
+            <div class="user-details">
+                <div class="user-name">{{ user()?.username || user()?.email }}</div>
+                <div class="user-status">
+                    <span [class]="'status-dot ' + (user()?.status || 'offline')"></span>
+                    {{ user()?.status || 'offline' }}
+                </div>
             </div>
-            <button 
-                class="btn btn-sm btn-outline-secondary" 
-                (click)="openSettings()"
-            >
-                ⚙️
-            </button>
         </div>
+        <button class="gear-btn settings-button" 
+                (click)="openSettings();" 
+                (mousedown)="$event.stopPropagation()">
+        </button>
     </div>
 </div>

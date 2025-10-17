@@ -13,8 +13,8 @@ export class GroupService {
   private API = `${environment.apiUrl}/groups`;
 
   // Get all groups for a user
-  getGroups(userId: string): Observable<{ groups: Group[], success: boolean }> {
-    return this.http.get<{ groups: Group[], success: boolean }>(
+  getGroups(userId: string): Observable<{ groups: Group[], memberships: Membership[], success: boolean }> {
+    return this.http.get<{ groups: Group[], memberships: Membership[], success: boolean }>(
       `${this.API}/${userId}`
     );
   }
@@ -55,6 +55,13 @@ export class GroupService {
     return this.http.put<{ updatedMembership: Membership, success: boolean }>(
       `${this.API}/${groupId}/${userId}`, 
       { newRole }
+    );
+  }
+
+  // remove a user from a group
+  removeUser(groupId: string, userId: string): Observable<{ success: boolean }> {
+    return this.http.delete<{ success: boolean }>(
+      `${this.API}/${groupId}/${userId}`
     );
   }
 }

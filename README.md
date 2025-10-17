@@ -111,6 +111,7 @@ DB_NAME=chat-app
 |PUT   |`/:groupId/:userId`      |Super|Grant or revoke group admin for a user  |
 |PUT   |`/:groupId/:userId/invite|Super|Add user to group ("invite")            |
 |DELETE|`/:groupId`              |Super|Delete group & it's channels/memberships|
+|DELETE|`/:groupId/:userId`      |Admin|Remove a user and their membership      |
 #### Channels (/channels)
 |Method|Endpoint                 |Auth |Description                             |
 |------|-------------------------|-----|----------------------------------------|
@@ -219,12 +220,19 @@ app/
 * [X] Initial seed test file
 * [X] Include creating super admin, group, etc.
 <br>
+* [ ] Admin UI to Create Users, Groups
+* [ ] UI to Edit/Delete Message.. etc.
+* **NEED TO FIX**:
+  * [ ] User Settings update >> doesn't emit socket
+  * [ ] Channel ban is treated as a group one
+  * [ ] Banned user gets generic 'Failed to send message' rather than "you are banned: <details>"
+
 * [...] Multimedia Handling -- Upload/Download
   * [X] User Avatars
   * [ ] Group Icons
   * [ ] Files (size limit, type limit)
     * file types later?: (.mp3, .wav, .png, .jpg, .gif, .mp4)
-  * [ ] Display Timestamps on Posts (Optional in Settings?)
+  * [X] Display Timestamps on Posts (Optional in Settings?)
 <br><br>
 * [ ] Video chat (PeerJS)
   * [ ] Output Component Display
@@ -291,14 +299,9 @@ chat-app/
 │   │       └── 68f123_document.pdf
 ...
 ```
-**MULTER**: Node.JS middleware that handles file uploads from HTML forms.
-
-
+* **MULTER**: Node.JS middleware that handles file uploads from HTML forms.
 * **Frontend** (`/src/assets/`): UI elements (icons, fonts, default images..)
-
-
 ***
-
 ### Roles & Permissions (keep or remove this?)
 
 |Role        | Permissions (Phase 1)                                                |

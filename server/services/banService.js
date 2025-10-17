@@ -10,7 +10,7 @@ async function checkExpiredBans() {
 
     for (const ban of expiredBans) {
         await db.collection('bans').deleteOne({ _id: ban._id });
-        emitUserUnbanned(ban._id);
+        emitBanDeleted(ban._id);
     }
 }
 

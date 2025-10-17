@@ -1,4 +1,5 @@
 import { Injectable, inject } from '@angular/core';
+import { Observable } from 'rxjs';
 import { HttpClient } from '@angular/common/http';
 import { environment } from '../../environments/environment';
 import { Message } from '../models/message.model';
@@ -15,6 +16,17 @@ export class MessageService {
     return this.http.post<{ createdMessage: Message }>(
       `${this.API}/channel/${channelId}`, 
       data
+    );
+  }
+
+  // Upload a message attachment
+  uploadAttachment(file: File): Observable<{ attachmentUrl: string, success: boolean }>{
+    const formData = new FormData();
+    formData.append('attachment', file);
+
+    return this.http.post<{ attachmentUrl: string, success: boolean }>(
+      `${this.API}/attachment`,
+      formData
     );
   }
 

@@ -6,7 +6,6 @@ import { UserService } from '../../services/user.service';
 import { UtilityService } from '../../services/utility.service';
 import { Router } from '@angular/router';
 import { User } from '../../models/user.model';
-import { environment } from '../../../environments/environment';
 import { firstValueFrom } from 'rxjs';
 
 @Component({
@@ -20,7 +19,6 @@ export class SettingsComponent {
   private userService = inject(UserService);
   readonly utility = inject(UtilityService);
   private router = inject(Router);
-  private baseUrl = environment.apiUrl.replace('/api', '');
 
   editing = signal<boolean>(false);
   errorMsg = signal<string>('');

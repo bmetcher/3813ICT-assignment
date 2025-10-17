@@ -1,86 +1,90 @@
-<div class="container py-3">
-    <!--Return To Chat-->
-    <div class="d-flex justify-content-between align-items-center mb-3 border-bottom pb-2">
-        <button class="btn btn-outline-primary" (click)="backToChat()">Return to chat</button>
-        <!-- 
-        "ADMIN PANEL" for Supers -- Temporarily Hiding This; Needs Refining/Rework UI
-        <button *ngIf="user?.superAdmin" class="btn btn-outline-success" (click)="goToAdmin()">Admin Settings</button> 
-        -->
-        <h5>Settings</h5>
-    </div>
+<div class="settings-container">
+    <div class="settings-card">
+        <!--Return To Chat-->
+        <div class="settings-header">
+            <h5>Settings</h5>
+            <button class="close-button" (click)="backToChat()">Return to chat</button>
+        </div>
 
-    <!-- Error Message -->
-    <div *ngIf="errorMsg()" class="alert alert-danger">{{ errorMsg() }}</div>
+        <div class="settings-content">
+            <!-- Error Message -->
+            <div *ngIf="errorMsg()" class="error-message">
+                {{ errorMsg() }}
+            </div>
 
-    <!--User Data-->
-    <div class="card mb-3 p-3" *ngIf="editableUser() as user">  <!-- *** Keep this ngIf ???-->
-        <div class="d-flex align-items-center mb-3">
-            <img 
-                [src]="getAvatarUrl(user.avatar)" 
-                class="rounded-circle me-3" 
-                style="width:128px;height:128px; object-fit:cover;"
-                alt="User avatar"
-            >
+            <!--Profile Section-->
+            <div class="settings-section" *ngIf="editableUser() as user">
+                <h2 class="section-title">Profile</h2>
 
-            <!--Avatar Upload Button-->
-            <div>
-                <!--Hidden file input-->
-                <input
-                    #fileInput
-                    type="file"
-                    accept="image/*"
-                    style="display: none;"
-                    (change)="onAvatarSelected($event)"
-                >
+                <div class="avatar-section">
+                    <img [src]="getAvatarUrl(user.avatar)" 
+                        alt="User avatar"
+                        class="avatar-preview"/>
+                    <!--Avatar Upload Button-->
+                    <div class="avatar-controls">
+                        <!--Hidden file input-->
+                        <input
+                            #fileInput
+                            type="file"
+                            accept="image/*"
+                            style="display: none;"
+                            (change)="onAvatarSelected($event)"
+                        />
+                        <!--Visible file input trigger button-->
+                        <button
+                            class="file-input-label"
+                            (click)="fileInput.click()"
+                            [disabled]="uploading()">
+                            {{ uploading() ? 'Uploading...' : 'Change Avatar' }}
+                        </button>
+                        <small style="color: var(--text-muted)">Max 5MB | JPG, PNG, GIF, WebP</small>
+                    </div>
+                </div>
                 
-                <!--Visible file input trigger button-->
-                <button
-                    class="btn btn-sm btn-outline-primary"
-                    (click)="fileInput.click()"
-                    [disabled]="uploading()"
-                >
-                    {{ uploading() ? 'Uploading...' : 'Change Avatar' }}
-                </button>
+                <div class="form-group">
+                    <label for="username">Username</label>
+                    <input type="text"
+                        id="username"
+                        class="form-control" 
+                        [(ngModel)]="user.username" 
+                        [readonly]="!editing()">
+                </div>
 
-                <small class="d-block text-muted mt-1">
-                    Max 5MB | JPG, PNG, GIF, WebP
-                </small>
+                <div class="form-group">
+                    <label for="email">Email</label>
+                    <input type="email"
+                            id="email"
+                            class="form-control"
+                            [(ngModel)]="user.email"
+                            [readonly]="!editing()"/>
+                </div>
+
+                <div class="form-group">
+                    <label for="password">Password</label>
+                    <input type="password"
+                            id="email"
+                            class="form-control" 
+                            [(ngModel)]="user.password" 
+                            [readonly]="!editing()">
+                </div>
+
+                <!--Action Buttons-->
+                <div class="settings-actions" *ngIf="editableUser()?._id">
+                    <button class="btn btn-primary" (click)="toggleEdit()">
+                        {{ editing() ? (saving() ? 'Saving...' : 'Save') : 'Edit' }}
+                    </button>
+                    <button class="btn btn-danger" (click)="logout()">
+                        🚪 Logout
+                    </button>
+                </div>
+            </div>
+
+            <!--Device & UI Settings-->
+            <div class="settings-section">
+                <h2 class="section-title">Device & UI Settings (Coming Soon...)</h2>
+                <button class="btn btn-sm btn-primary">Change Theme</button>
+                <button class="btn btn-sm btn-primary">Device Options</button>
             </div>
         </div>
-        
-        <div class="mb-2">
-            <label class="form-label">Username</label>
-            <input class="form-control" [(ngModel)]="user.username" [readonly]="!editing()">
-        </div>
-
-        <!-- <div class="mb-2">
-            <label class="form-label">Date of Birth</label>
-            <input class="form-control" type="date" [(ngModel)]="user.username" [readonly]="!editing">
-        </div> -->
-
-        <div class="mb-2">
-            <label class="form-label">Email</label>
-            <input class="form-control" type="email" [(ngModel)]="user.email" [readonly]="!editing()">
-        </div>
-
-        <div class="mb-2">
-            <label class="form-label">Password</label>
-            <input class="form-control" type="password" [(ngModel)]="user.password" [readonly]="!editing()">
-        </div>
-
-        <!--Allow logged in users to edit their details-->
-        <div *ngIf="editableUser()?._id" class="d-flex justify-content-between">
-            <button class="btn btn-outline-secondary" (click)="toggleEdit()">
-                {{ editing() ? (saving() ? 'Saving...' : 'Save') : 'Edit' }}
-            </button>
-            <button class="btn btn-outline-danger" (click)="logout()">Logout</button>
-        </div>
-    </div>
-
-    <!--Device & UI Settings-->
-    <div class="card p-3">
-        <h6>Device & UI Settings (placeholder)</h6>
-        <button class="btn btn-sm btn-outline-secondary">Change Theme</button>
-        <button class="btn btn-sm btn-outline-secondary">Device Options</button>
     </div>
 </div>

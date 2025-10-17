@@ -1,4 +1,5 @@
 import { Injectable, signal, computed, inject } from '@angular/core';
+import { HttpClient } from '@angular/common/http';
 import { Group } from '../models/group.model';
 import { Channel } from '../models/channel.model';
 import { User } from '../models/user.model';
@@ -6,12 +7,138 @@ import { Message } from '../models/message.model';
 import { Membership } from '../models/membership.model';
 import { GroupService } from './group.service';
 import { ChannelService } from './channel.service';
+import { SocketService } from './socket.service';
 import { firstValueFrom } from 'rxjs';
+import { environment } from '../../environments/environment';
 
 @Injectable({
   providedIn: 'root'
 })
 export class ContextService {
+  private socketService = inject(SocketService);
+  private http = inject(HttpClient);
+
+  setupSocketListeners(): void {
+    console.log('Context: Setting up global socket listeners');
+    // groups
+    this.socketService.on('groupUpdated', (group: Group) => {
+      console.log('Context: Group updated:', group);
+      const updated = this._groups().map(g =>
+        g._id === group._id ? { ...group, open: g.open } : g
+      );
+      this._groups.set(updated);
+    });
+
+    this.socketService.on('groupDeleted', (group: Group) => {
+      console.log('Context: Group deleted:', group._id);
+      this._groups.set(this._groups().filter(g => g._id !== group._id));
+      this._channels.set(this._channels().filter(c => c.groupId !== group._id));
+      // if current channel was in deleted group, clear it
+      if (this._currentChannel()?.groupId === group._id) {
+        this.clearCurrentChannel();
+      }
+    });
+
+    // channels
+    this.socketService.on('channelCreated', (channel: Channel) => {
+      console.log('Context: Channel created:', channel);
+      this._channels.set([...this._channels(), channel]);
+    });
+
+    this.socketService.on('channelUpdated', (channel: Channel) => {
+      console.log('Context: Channel updated:', channel);
+      const updated = this._channels().map(ch => 
+        ch._id === channel._id ? channel : ch
+      );
+      this._channels.set(updated);
+      // update current channel if it's the one that changed
+      if (this._currentChannel()?._id === channel._id) {
+        this._currentChannel.set(channel);
+      }
+    });
+
+    this.socketService.on('channelDeleted', (channel: Channel) => {
+      console.log('Context: Channel deleted:', channel._id);
+      this._channels.set(this._channels().filter(ch => ch._id !== channel._id));
+      // clear current channel if it was deleted
+      if (this._currentChannel()?._id === channel._id) {
+        this.clearCurrentChannel();
+      }
+    });
+
+    // users
+    this.socketService.on('userUpdated', (user: User) => {
+      console.log('Context: User updated:', user);
+      const updated = this._users().map(u =>
+        u._id === user._id ? user: u
+      );
+      this._users.set(updated);
+    });
+
+    this.socketService.on('userDeleted', (user: User) => {
+      console.log('Context: User deleted:', user._id);
+      this._users.set(this._users().filter(u => u._id !== user._id));
+    });
+
+    // memberships (roles)
+    this.socketService.on('membershipCreated', (membership: Membership) => {
+      console.log('Context: Membership created:', membership);
+      this._memberships.set([...this._memberships(), membership]);
+    });
+
+    this.socketService.on('membershipUpdated', (membership: Membership) => {
+      console.log('Context: Membership updated:', membership);
+      const updated = this._memberships().map(m => 
+        m._id === membership._id ? membership : m
+      );
+      this._memberships.set(updated);
+    });
+
+    this.socketService.on('membershipDeleted', (membership: Membership) => {
+      console.log('Context: Membership deleted:', membership);
+      this._memberships.set(this._memberships().filter(m => m._id !== membership._id));
+    });
+
+    // user presence
+    this.socketService.on('userJoinedChannel', (data: { userId: string, channelId: string }) => {
+      console.log('User joined channel:', data);
+      // reload users if it's the current channel
+      if (this._currentChannel()?._id === data.channelId) {
+        // trigger user reload in details component
+      }
+    });
+
+    this.socketService.on('userLeftChannel', (data: { userId: string, channelId: string }) => {
+      console.log('User left channel:', data);
+      // reload users if it's the current channel
+      if (this._currentChannel()?._id === data.channelId) {
+        // trigger user reload in details component
+      }
+    });
+  }
+
+  // clear listeners when disconnecting
+  cleanupSocketListeners(): void {
+    this.socketService.off('groupUpdated');
+    this.socketService.off('groupDeleted');
+    this.socketService.off('channelCreated');
+    this.socketService.off('channelUpdated');
+    this.socketService.off('channelDeleted');
+    this.socketService.off('userUpdated');
+    this.socketService.off('userDeleted');
+    this.socketService.off('membershipUpdated');
+    this.socketService.off('membershipDeleted');
+  }
+  // clear context when disconnecting
+  clearAllContext() {
+    this._groups.set([]);
+    this._channels.set([]);
+    this._currentChannel.set(null);
+    this._users.set([]);
+    this._messages.set([]);
+    this._memberships.set([]);
+  }
+
   private groupService = inject(GroupService);
   private channelService = inject(ChannelService);
 
@@ -91,6 +218,7 @@ export class ContextService {
   async loadUserContext(userId: string): Promise<void> {
     try {
       console.log('Loading context for user:', userId);
+
       // load groups
       const groupsData = await firstValueFrom(
         this.groupService.getGroups(userId)
@@ -100,6 +228,13 @@ export class ContextService {
       if (groupsData?.groups && groupsData.groups.length > 0) {
         console.log('Loaded groups:', groupsData.groups.length);
         this.setGroups(groupsData.groups);
+
+        // load memberships included from response
+        if (groupsData.memberships) {
+          this._memberships.set(groupsData.memberships);
+          console.log('Loaded memberships:', groupsData.memberships.length);
+        }
+        
 
         // load channels for all groups
         const allChannels: Channel[] = [];
@@ -119,6 +254,7 @@ export class ContextService {
         console.warn('No groups returned');
         this.setGroups([]);
         this.setChannels([]);
+        this._memberships.set([]);
       }
     } catch (err) {
       console.error('Error loading user context:', err);
